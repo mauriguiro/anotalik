@@ -478,7 +478,9 @@ export default function LinkNestApp() {
                     <div style={{ color: cat.color }}>
                       <DynamicIcon name={cat.iconName} size={16} />
                     </div>
-                    <span className={`text-sm font-medium ${activeCategory === cat.id ? 'text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300'}`}>{cat.name}</span>
+                    <span className={`text-sm ${activeCategory === cat.id ? 'font-medium text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300'}`}>
+                      {cat.name}
+                    </span>
                   </div>
                 </div>
                 
@@ -492,6 +494,54 @@ export default function LinkNestApp() {
           );
         })}
       </ul>
+    );
+  };
+
+  const renderManageCategoryTree = (parentId: string | null, level = 0) => {
+    const children = categories.filter(c => c.parentId === parentId);
+    if (children.length === 0) return null;
+
+    return (
+      <div className={level > 0 ? "ml-4 mt-2 border-l-2 border-gray-100 dark:border-gray-700/50 pl-3 space-y-2" : "space-y-2"}>
+        {children.map(cat => (
+          <div key={cat.id} className="flex flex-col gap-2">
+            <div className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-gray-300 dark:hover:border-gray-600 bg-white dark:bg-gray-800 transition-colors shadow-sm">
+              <div className="flex items-center gap-3">
+                <div style={{ color: cat.color }} className="p-2 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                  <DynamicIcon name={cat.iconName} size={16} />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{cat.name}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1">
+                <button 
+                  onClick={() => openAddCategoryModal(cat.id)}
+                  className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-md transition-colors"
+                  title="Añadir subcategoría"
+                >
+                  <Plus size={16} />
+                </button>
+                <button 
+                  onClick={() => openEditCategoryModal(cat)}
+                  className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors"
+                  title="Editar"
+                >
+                  <Edit2 size={16} />
+                </button>
+                <button 
+                  onClick={() => deleteCategory(cat.id)}
+                  className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+                  title="Eliminar"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            </div>
+            {renderManageCategoryTree(cat.id, level + 1)}
+          </div>
+        ))}
+      </div>
     );
   };
 
@@ -579,13 +629,13 @@ export default function LinkNestApp() {
         </div>
         
         <div className="p-4 flex-1 overflow-y-auto">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Categorías</h2>
+          <div className="flex flex-col gap-2 mb-4">
+            <h2 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider pl-2">Categorías</h2>
             <button 
               onClick={() => setIsManageCatsModalOpen(true)}
-              className="text-gray-400 dark:text-gray-500 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-gray-800 p-1 rounded transition-colors flex items-center gap-1 text-xs font-medium"
+              className="w-full flex items-center justify-center gap-2 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 rounded-lg transition-colors border border-blue-100 dark:border-blue-900/50"
             >
-              <LucideIcons.Settings size={14} /> Gestionar
+              <LucideIcons.Settings size={16} /> Gestionar Categorías
             </button>
           </div>
           
@@ -890,37 +940,7 @@ export default function LinkNestApp() {
                 {categories.length === 0 ? (
                   <p className="text-center text-gray-500 text-sm">No hay categorías.</p>
                 ) : (
-                  categories.map(cat => (
-                    <div key={cat.id} className="flex items-center justify-between p-3 border border-gray-100 dark:border-gray-700 rounded-lg hover:border-gray-200 dark:hover:border-gray-600 bg-white dark:bg-gray-800 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div style={{ color: cat.color }} className="p-2 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                          <DynamicIcon name={cat.iconName} size={16} />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{cat.name}</p>
-                          {cat.parentId && (
-                            <p className="text-xs text-gray-500">Subcategoría de {categories.find(c => c.id === cat.parentId)?.name}</p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <button 
-                          onClick={() => openEditCategoryModal(cat)}
-                          className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-md transition-colors"
-                          title="Editar"
-                        >
-                          <Edit2 size={16} />
-                        </button>
-                        <button 
-                          onClick={() => deleteCategory(cat.id)}
-                          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-gray-700 rounded-md transition-colors"
-                          title="Eliminar"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </div>
-                  ))
+                  renderManageCategoryTree(null)
                 )}
               </div>
             </div>
