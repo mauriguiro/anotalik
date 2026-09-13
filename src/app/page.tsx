@@ -527,14 +527,14 @@ export default function LinkNestApp() {
                     <a href={link.url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-xs text-blue-500 dark:text-blue-400 hover:underline mb-1">
                       {(() => {
                         const url = link.url.toLowerCase();
-                        if (url.includes('youtube.') || url.includes('youtu.be')) return <LucideIcons.Youtube size={14} className="text-red-500 shrink-0" />;
-                        if (url.includes('instagram.')) return <LucideIcons.Instagram size={14} className="text-pink-500 shrink-0" />;
-                        if (url.includes('facebook.') || url.includes('fb.')) return <LucideIcons.Facebook size={14} className="text-blue-600 shrink-0" />;
-                        if (url.includes('twitter.') || url.includes('x.com')) return <LucideIcons.Twitter size={14} className="text-blue-400 dark:text-gray-300 shrink-0" />;
-                        if (url.includes('linkedin.')) return <LucideIcons.Linkedin size={14} className="text-blue-700 shrink-0" />;
-                        if (url.includes('github.')) return <LucideIcons.Github size={14} className="text-gray-800 dark:text-gray-200 shrink-0" />;
+                        if (url.includes('youtube.') || url.includes('youtu.be')) return <LucideIcons.Video size={14} className="text-red-500 shrink-0" />;
+                        if (url.includes('instagram.')) return <LucideIcons.Camera size={14} className="text-pink-500 shrink-0" />;
+                        if (url.includes('facebook.') || url.includes('fb.')) return <LucideIcons.Users size={14} className="text-blue-600 shrink-0" />;
+                        if (url.includes('twitter.') || url.includes('x.com')) return <LucideIcons.MessageCircle size={14} className="text-blue-400 dark:text-gray-300 shrink-0" />;
+                        if (url.includes('linkedin.')) return <LucideIcons.Briefcase size={14} className="text-blue-700 shrink-0" />;
+                        if (url.includes('github.')) return <LucideIcons.Code size={14} className="text-gray-800 dark:text-gray-200 shrink-0" />;
                         if (url.includes('tiktok.')) return <LucideIcons.Music size={14} className="text-gray-900 dark:text-gray-100 shrink-0" />;
-                        if (url.includes('twitch.')) return <LucideIcons.Twitch size={14} className="text-purple-500 shrink-0" />;
+                        if (url.includes('twitch.')) return <LucideIcons.Tv size={14} className="text-purple-500 shrink-0" />;
                         return <LucideIcons.Globe size={14} className="text-gray-400 shrink-0" />;
                       })()}
                       <span className="truncate">{link.url}</span>
