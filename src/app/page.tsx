@@ -19,32 +19,52 @@ import {
   HelpCircle
 } from 'lucide-react';
 
+import { auth, db } from '../lib/firebase';
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signOut, 
+  onAuthStateChanged,
+  User
+} from 'firebase/auth';
+import { 
+  collection, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  doc, 
+  query, 
+  where, 
+  getDocs,
+  writeBatch
+} from 'firebase/firestore';
+
 // Mocks Iniciales
 const INITIAL_CATEGORIES = [
-  { id: 1, name: 'Trabajo', color: '#3b82f6', iconName: 'Briefcase', parentId: null },
-  { id: 2, name: 'Personal', color: '#10b981', iconName: 'Home', parentId: null },
-  { id: 3, name: 'Estudio', color: '#f59e0b', iconName: 'BookOpen', parentId: null },
-  { id: 4, name: 'Viajes', color: '#ec4899', iconName: 'Plane', parentId: 2 },
-  { id: 5, name: 'Auto', color: '#ef4444', iconName: 'Car', parentId: 2 },
+  { id: '1', name: 'Trabajo', color: '#3b82f6', iconName: 'Briefcase', parentId: null },
+  { id: '2', name: 'Personal', color: '#10b981', iconName: 'Home', parentId: null },
+  { id: '3', name: 'Estudio', color: '#f59e0b', iconName: 'BookOpen', parentId: null },
+  { id: '4', name: 'Viajes', color: '#ec4899', iconName: 'Plane', parentId: '2' },
+  { id: '5', name: 'Auto', color: '#ef4444', iconName: 'Car', parentId: '2' },
 ];
 
 const INITIAL_LINKS = [
   { 
-    id: 1, 
+    id: '1', 
     url: 'https://react.dev', 
     title: 'React Documentation', 
     description: 'Documentación oficial para repasar hooks.', 
     image: 'https://react.dev/images/og-home.png',
-    categoryId: 3,
+    categoryId: '3',
     tags: ['programacion', 'frontend']
   },
   { 
-    id: 2, 
+    id: '2', 
     url: 'https://tailwindcss.com', 
     title: 'Tailwind CSS', 
     description: 'Utility-first CSS framework.', 
     image: 'https://tailwindcss.com/api/og',
-    categoryId: 1,
+    categoryId: '1',
     tags: ['css', 'diseño']
   }
 ];
@@ -77,9 +97,9 @@ export default function LinkNestApp() {
   const [categories, setCategories] = useState<any[]>(INITIAL_CATEGORIES);
   const [links, setLinks] = useState<any[]>(INITIAL_LINKS);
   
-  const [activeCategory, setActiveCategory] = useState<number | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [expandedCategories, setExpandedCategories] = useState<Record<number, boolean>>({});
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -88,10 +108,12 @@ export default function LinkNestApp() {
 
   // Modal Category State
   const [isCatModalOpen, setIsCatModalOpen] = useState(false);
-  const [modalParentId, setModalParentId] = useState<number | null>(null);
+  const [modalParentId, setModalParentId] = useState<string | null>(null);
   const [newCatName, setNewCatName] = useState('');
   const [newCatColor, setNewCatColor] = useState(AVAILABLE_COLORS[0]);
   const [newCatIcon, setNewCatIcon] = useState(AVAILABLE_ICONS[0]);
+  const [isManageCatsModalOpen, setIsManageCatsModalOpen] = useState(false);
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
 
   // Modal Link Edit State
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
@@ -99,37 +121,91 @@ export default function LinkNestApp() {
   const [editLinkTitle, setEditLinkTitle] = useState('');
   const [editLinkUrl, setEditLinkUrl] = useState('');
   const [editLinkDesc, setEditLinkDesc] = useState('');
-  const [editLinkCat, setEditLinkCat] = useState<number | null>(null);
+  const [editLinkCat, setEditLinkCat] = useState<string | null>(null);
   const [editLinkTags, setEditLinkTags] = useState('');
+  const [activeLinkDropdown, setActiveLinkDropdown] = useState<string | null>(null);
+  const [isMoveLinkModalOpen, setIsMoveLinkModalOpen] = useState(false);
   const [isCatSelectorOpen, setIsCatSelectorOpen] = useState(false);
-  const [modalExpandedCats, setModalExpandedCats] = useState<Record<number, boolean>>({});
+  const [modalExpandedCats, setModalExpandedCats] = useState<Record<string, boolean>>({});
 
-  // Inicializar LocalStorage y Dark Mode
+  // Auth state
+  const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoginMode, setIsLoginMode] = useState(true);
+  const [authError, setAuthError] = useState('');
+
+  // Cargar datos de Firebase y estado de Auth
   useEffect(() => {
     setIsMounted(true);
-    const savedCats = localStorage.getItem('anotalink_cats');
-    const savedLinks = localStorage.getItem('anotalink_links');
     const savedTheme = localStorage.getItem('anotalink_theme');
     const savedExpanded = localStorage.getItem('anotalink_expanded');
-
-    if (savedCats) setCategories(JSON.parse(savedCats));
-    if (savedLinks) setLinks(JSON.parse(savedLinks));
     if (savedExpanded) setExpandedCategories(JSON.parse(savedExpanded));
     
     if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
       setIsDarkMode(true);
       document.documentElement.classList.add('dark');
     }
+
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        try {
+          const catsSnapshot = await getDocs(query(collection(db, 'categories'), where('userId', '==', currentUser.uid)));
+          let userCats = catsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          
+          const linksSnapshot = await getDocs(query(collection(db, 'links'), where('userId', '==', currentUser.uid)));
+          let userLinks = linksSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          
+          // Seed mock data for new accounts
+          if (userCats.length === 0 && userLinks.length === 0) {
+            const batch = writeBatch(db);
+            const catIdMap: Record<string, string> = {};
+            
+            for (const cat of INITIAL_CATEGORIES) {
+              const docRef = doc(collection(db, 'categories'));
+              catIdMap[cat.id] = docRef.id;
+              const catData = { ...cat, userId: currentUser.uid, parentId: cat.parentId ? catIdMap[cat.parentId] : null };
+              // @ts-expect-error delete
+              delete catData.id;
+              batch.set(docRef, catData);
+              userCats.push({ ...catData, id: docRef.id });
+            }
+            
+            for (const link of INITIAL_LINKS) {
+              const docRef = doc(collection(db, 'links'));
+              const linkData = { ...link, userId: currentUser.uid, categoryId: link.categoryId ? catIdMap[link.categoryId] : null };
+              // @ts-expect-error delete
+              delete linkData.id;
+              batch.set(docRef, linkData);
+              userLinks.push({ ...linkData, id: docRef.id });
+            }
+            
+            await batch.commit();
+          }
+          
+          setCategories(userCats);
+          setLinks(userLinks);
+        } catch (error) {
+          console.error("Error fetching data:", error);
+        }
+      } else {
+        setCategories([]);
+        setLinks([]);
+      }
+      setAuthLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  // Guardar en LocalStorage cada vez que cambien
+  // Guardar estado visual expandido localmente
   useEffect(() => {
-    if (isMounted) {
-      localStorage.setItem('anotalink_cats', JSON.stringify(categories));
-      localStorage.setItem('anotalink_links', JSON.stringify(links));
+    if (isMounted && Object.keys(expandedCategories).length > 0) {
       localStorage.setItem('anotalink_expanded', JSON.stringify(expandedCategories));
     }
-  }, [categories, links, expandedCategories, isMounted]);
+  }, [expandedCategories, isMounted]);
 
   // Toggle Dark Mode
   const toggleDarkMode = () => {
@@ -163,18 +239,19 @@ export default function LinkNestApp() {
     }
   }, []);
 
-  const toggleExpand = (id: number, e: React.MouseEvent) => {
+  const toggleExpand = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setExpandedCategories(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const toggleModalExpand = (id: number, e: React.MouseEvent) => {
+  const toggleModalExpand = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setModalExpandedCats(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const openAddCategoryModal = (parentId: number | null = null, e?: React.MouseEvent) => {
+  const openAddCategoryModal = (parentId: string | null = null, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+    setEditingCategoryId(null);
     setModalParentId(parentId);
     setNewCatName('');
     setNewCatColor(AVAILABLE_COLORS[Math.floor(Math.random() * AVAILABLE_COLORS.length)]);
@@ -182,18 +259,70 @@ export default function LinkNestApp() {
     setIsCatModalOpen(true);
   };
 
-  const saveCategory = () => {
-    if (!newCatName.trim()) return;
-    const newCat = {
-      id: Date.now(),
-      name: newCatName,
-      color: newCatColor,
-      iconName: newCatIcon,
-      parentId: modalParentId
-    };
-    setCategories([...categories, newCat]);
-    if (modalParentId) {
-      setExpandedCategories(prev => ({ ...prev, [modalParentId]: true }));
+  const openEditCategoryModal = (cat: any) => {
+    setEditingCategoryId(cat.id);
+    setModalParentId(cat.parentId);
+    setNewCatName(cat.name);
+    setNewCatColor(cat.color);
+    setNewCatIcon(cat.iconName);
+    setIsCatModalOpen(true);
+  };
+
+  const deleteCategory = async (id: string) => {
+    // Check if it has subcategories
+    if (categories.some(c => c.parentId === id)) {
+      alert("No puedes eliminar una categoría que contiene subcategorías.");
+      return;
+    }
+    
+    await deleteDoc(doc(db, 'categories', id));
+    setCategories(categories.filter(c => c.id !== id));
+    
+    // Update links
+    const batch = writeBatch(db);
+    let hasLinksToUpdate = false;
+    const updatedLinks = links.map(l => {
+      if (l.categoryId === id) {
+        hasLinksToUpdate = true;
+        batch.update(doc(db, 'links', l.id), { categoryId: null });
+        return { ...l, categoryId: null };
+      }
+      return l;
+    });
+    if (hasLinksToUpdate) {
+      await batch.commit();
+      setLinks(updatedLinks);
+    }
+    
+    if (activeCategory === id) setActiveCategory(null);
+  };
+
+  const saveCategory = async () => {
+    if (!newCatName.trim() || !user) return;
+    
+    if (editingCategoryId) {
+      const catRef = doc(db, 'categories', editingCategoryId);
+      const updatedData = {
+        name: newCatName,
+        color: newCatColor,
+        iconName: newCatIcon,
+        parentId: modalParentId
+      };
+      await updateDoc(catRef, updatedData);
+      setCategories(categories.map(c => c.id === editingCategoryId ? { ...c, ...updatedData } : c));
+    } else {
+      const newCatData = {
+        userId: user.uid,
+        name: newCatName,
+        color: newCatColor,
+        iconName: newCatIcon,
+        parentId: modalParentId
+      };
+      const docRef = await addDoc(collection(db, 'categories'), newCatData);
+      setCategories([...categories, { id: docRef.id, ...newCatData }]);
+      if (modalParentId) {
+        setExpandedCategories(prev => ({ ...prev, [modalParentId]: true }));
+      }
     }
     setIsCatModalOpen(false);
   };
@@ -222,8 +351,9 @@ export default function LinkNestApp() {
     }
   };
 
-  const deleteLink = (id: number) => {
+  const deleteLink = async (id: string) => {
     if (confirm('¿Estás seguro de que deseas borrar este enlace?')) {
+      await deleteDoc(doc(db, 'links', id));
       setLinks(links.filter(l => l.id !== id));
     }
   };
@@ -238,31 +368,56 @@ export default function LinkNestApp() {
     setIsLinkModalOpen(true);
   };
 
-  const saveEditedLink = () => {
+  const openMoveLinkModal = (link: any) => {
+    setEditingLink(link);
+    setEditLinkCat(link.categoryId);
+    setIsMoveLinkModalOpen(true);
+  };
+
+  const saveMovedLink = async () => {
+    if (editingLink && user) {
+      const linkRef = doc(db, 'links', editingLink.id);
+      await updateDoc(linkRef, { categoryId: editLinkCat });
+      setLinks(links.map(l => l.id === editingLink.id ? { ...l, categoryId: editLinkCat } : l));
+    }
+    setIsMoveLinkModalOpen(false);
+  };
+
+  const saveEditedLink = async () => {
+    if (!user) return;
     const tagsArray = editLinkTags.split(',').map(t => t.trim()).filter(t => t !== '');
     const finalCategoryId = editLinkCat;
     
     if (editingLink) {
-      setLinks(links.map(l => l.id === editingLink.id ? {
-        ...l,
+      const linkRef = doc(db, 'links', editingLink.id);
+      const updatedData = {
         title: editLinkTitle,
         url: editLinkUrl,
         description: editLinkDesc,
-        categoryId: finalCategoryId,
-        tags: tagsArray
-      } : l));
-    } else {
-      const domain = new URL(editLinkUrl).hostname.replace('www.', '');
-      const newLink = {
-        id: Date.now(),
-        url: editLinkUrl,
-        title: editLinkTitle,
-        description: editLinkDesc,
-        image: `https://logo.clearbit.com/${domain}`,
         categoryId: finalCategoryId,
         tags: tagsArray
       };
-      setLinks([newLink, ...links]);
+      await updateDoc(linkRef, updatedData);
+      setLinks(links.map(l => l.id === editingLink.id ? { ...l, ...updatedData } : l));
+    } else {
+      let domain = '';
+      try {
+        domain = new URL(editLinkUrl).hostname.replace('www.', '');
+      } catch {
+        domain = editLinkUrl.split('/')[0];
+      }
+      
+      const newLinkData = {
+        userId: user.uid,
+        url: editLinkUrl,
+        title: editLinkTitle,
+        description: editLinkDesc,
+        image: `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
+        categoryId: finalCategoryId,
+        tags: tagsArray
+      };
+      const docRef = await addDoc(collection(db, 'links'), newLinkData);
+      setLinks([{ id: docRef.id, ...newLinkData }, ...links]);
     }
     
     setIsLinkModalOpen(false);
@@ -287,7 +442,7 @@ export default function LinkNestApp() {
     return true;
   });
 
-  const renderCategoryTree = (parentId: number | null, level = 0) => {
+  const renderCategoryTree = (parentId: string | null, level = 0) => {
     const children = categories.filter(c => c.parentId === parentId);
     if (children.length === 0) return null;
 
@@ -325,16 +480,6 @@ export default function LinkNestApp() {
                     </div>
                     <span className={`text-sm font-medium ${activeCategory === cat.id ? 'text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300'}`}>{cat.name}</span>
                   </div>
-                  
-                  <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                    <button 
-                      onClick={(e) => openAddCategoryModal(cat.id, e)}
-                      className="text-gray-400 hover:text-blue-500 p-1 rounded-md hover:bg-white dark:hover:bg-gray-700 shadow-sm border border-gray-100 dark:border-gray-600"
-                      title="Agregar subcategoría"
-                    >
-                      <Plus size={14} />
-                    </button>
-                  </div>
                 </div>
                 
                 {hasChildren && isExpanded && (
@@ -352,6 +497,60 @@ export default function LinkNestApp() {
 
   // Prevenir desajuste de hidratación en SSR
   if (!isMounted) return <div className="h-screen bg-white dark:bg-gray-900"></div>;
+
+  if (authLoading) {
+    return <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-900"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div></div>;
+  }
+
+  if (!user) {
+    const handleAuth = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setAuthError('');
+      try {
+        if (isLoginMode) {
+          await signInWithEmailAndPassword(auth, email, password);
+        } else {
+          await createUserWithEmailAndPassword(auth, email, password);
+        }
+      } catch (err: any) {
+        setAuthError(err.message || 'Error en la autenticación');
+      }
+    };
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 transition-colors">
+        <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl w-full max-w-md mx-4">
+          <div className="flex items-center justify-center gap-3 mb-8">
+            <div className="bg-blue-600 p-2.5 rounded-xl text-white">
+              <Folder size={28} strokeWidth={2.5} />
+            </div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent">AnotaLink</h1>
+          </div>
+          <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100 text-center">
+            {isLoginMode ? 'Iniciar Sesión' : 'Crear Cuenta'}
+          </h2>
+          <form onSubmit={handleAuth} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Correo Electrónico</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} required className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 dark:text-gray-100" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Contraseña</label>
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 dark:text-gray-100" />
+            </div>
+            {authError && <p className="text-red-500 text-sm text-center">{authError}</p>}
+            <button type="submit" className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors">
+              {isLoginMode ? 'Entrar' : 'Registrarse'}
+            </button>
+          </form>
+          <div className="mt-6 text-center">
+            <button onClick={() => setIsLoginMode(!isLoginMode)} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
+              {isLoginMode ? '¿No tienes cuenta? Regístrate' : '¿Ya tienes cuenta? Inicia sesión'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans overflow-hidden transition-colors">
@@ -383,10 +582,10 @@ export default function LinkNestApp() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Categorías</h2>
             <button 
-              onClick={() => openAddCategoryModal(null)}
+              onClick={() => setIsManageCatsModalOpen(true)}
               className="text-gray-400 dark:text-gray-500 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-gray-800 p-1 rounded transition-colors flex items-center gap-1 text-xs font-medium"
             >
-              <Plus size={14} /> Nueva
+              <LucideIcons.Settings size={14} /> Gestionar
             </button>
           </div>
           
@@ -403,6 +602,21 @@ export default function LinkNestApp() {
           </div>
 
           {renderCategoryTree(null)}
+        </div>
+        
+        {/* User Profile & Logout */}
+        <div className="p-4 border-t border-gray-200 dark:border-gray-800 flex items-center justify-between">
+          <div className="flex flex-col overflow-hidden">
+            <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Cuenta</span>
+            <span className="text-sm font-semibold truncate text-gray-800 dark:text-gray-200" title={user?.email || ''}>{user?.email}</span>
+          </div>
+          <button 
+            onClick={() => signOut(auth)}
+            className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+            title="Cerrar sesión"
+          >
+            <LucideIcons.LogOut size={18} />
+          </button>
         </div>
       </aside>
 
@@ -499,24 +713,75 @@ export default function LinkNestApp() {
                 <div key={link.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-3 flex items-center gap-3 hover:shadow-md transition-shadow group">
                   {/* Thumbnail */}
                   <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 dark:bg-gray-700 rounded-lg relative overflow-hidden flex-shrink-0 flex items-center justify-center">
+                    {/* Fallback de fondo */}
+                    <div className="absolute inset-0 flex items-center justify-center bg-gray-50 dark:bg-gray-800 z-0">
+                      {(() => {
+                        const lUrl = link.url.toLowerCase();
+                        if (lUrl.includes('youtube.') || lUrl.includes('youtu.be')) return <LucideIcons.Video size={28} className="text-red-500 opacity-40" />;
+                        if (lUrl.includes('instagram.')) return <LucideIcons.Camera size={28} className="text-pink-500 opacity-40" />;
+                        if (lUrl.includes('facebook.') || lUrl.includes('fb.')) return <LucideIcons.Users size={28} className="text-blue-600 opacity-40" />;
+                        if (lUrl.includes('twitter.') || lUrl.includes('x.com')) return <LucideIcons.MessageCircle size={28} className="text-gray-500 opacity-40" />;
+                        if (lUrl.includes('linkedin.')) return <LucideIcons.Briefcase size={28} className="text-blue-700 opacity-40" />;
+                        if (lUrl.includes('github.')) return <LucideIcons.Code size={28} className="text-gray-600 opacity-40" />;
+                        if (lUrl.includes('tiktok.')) return <LucideIcons.Music size={28} className="text-gray-700 opacity-40" />;
+                        if (lUrl.includes('twitch.')) return <LucideIcons.Tv size={28} className="text-purple-500 opacity-40" />;
+                        return <LucideIcons.Globe size={28} className="text-gray-400 opacity-40" />;
+                      })()}
+                    </div>
+
                     <img 
                       src={link.image} 
                       alt={link.title} 
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover absolute inset-0 z-10"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
-                        (e.target as HTMLImageElement).parentElement!.innerHTML += `<div class="text-gray-300 dark:text-gray-500 w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-700"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></div>`;
+                        const target = e.target as HTMLImageElement;
+                        if (!target.dataset.failed) {
+                          target.dataset.failed = 'true';
+                          try {
+                            const urlStr = link.url.startsWith('http') ? link.url : `https://${link.url}`;
+                            const domain = new URL(urlStr).hostname;
+                            target.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+                          } catch (err) {
+                            target.style.display = 'none';
+                          }
+                        } else {
+                          target.style.display = 'none';
+                        }
                       }}
                     />
+                    
                     {category && (
                       <span 
-                        className="absolute top-1 right-1 p-0.5 rounded text-white shadow-sm flex items-center"
+                        className="absolute top-1 right-1 p-0.5 rounded text-white shadow-sm flex items-center z-20"
                         style={{ backgroundColor: category.color }}
                         title={category.name}
                       >
                         <DynamicIcon name={category.iconName} size={12} />
                       </span>
                     )}
+                    {(() => {
+                      const lUrl = link.url.toLowerCase();
+                      let icon = null;
+                      let bg = '';
+                      if (lUrl.includes('youtube.') || lUrl.includes('youtu.be')) { icon = <LucideIcons.Video size={12} />; bg = 'bg-red-500'; }
+                      else if (lUrl.includes('instagram.')) { icon = <LucideIcons.Camera size={12} />; bg = 'bg-pink-600'; }
+                      else if (lUrl.includes('facebook.') || lUrl.includes('fb.')) { icon = <LucideIcons.Users size={12} />; bg = 'bg-blue-600'; }
+                      else if (lUrl.includes('twitter.') || lUrl.includes('x.com')) { icon = <LucideIcons.MessageCircle size={12} />; bg = 'bg-blue-400 dark:bg-gray-800'; }
+                      else if (lUrl.includes('linkedin.')) { icon = <LucideIcons.Briefcase size={12} />; bg = 'bg-blue-700'; }
+                      else if (lUrl.includes('github.')) { icon = <LucideIcons.Code size={12} />; bg = 'bg-gray-900 dark:bg-gray-700'; }
+                      else if (lUrl.includes('tiktok.')) { icon = <LucideIcons.Music size={12} />; bg = 'bg-black dark:bg-gray-800'; }
+                      else if (lUrl.includes('twitch.')) { icon = <LucideIcons.Tv size={12} />; bg = 'bg-purple-600'; }
+                      
+                      if (!icon) return null;
+                      return (
+                        <span 
+                          className={`absolute bottom-1 left-1 p-1 rounded-full text-white shadow-sm flex items-center justify-center z-20 ${bg}`}
+                          title="Red de origen"
+                        >
+                          {icon}
+                        </span>
+                      );
+                    })()}
                   </div>
                   
                   {/* Info */}
@@ -556,21 +821,43 @@ export default function LinkNestApp() {
                   </div>
                   
                   {/* Opciones */}
-                  <div className="flex flex-col sm:flex-row gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity pl-2 border-l border-gray-100 dark:border-gray-700">
+                  <div className="relative pl-2 border-l border-gray-100 dark:border-gray-700 flex items-center">
                     <button 
-                      onClick={() => openEditLinkModal(link)}
-                      className="text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                      title="Editar enlace"
+                      onClick={() => setActiveLinkDropdown(activeLinkDropdown === link.id ? null : link.id)}
+                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                      title="Opciones"
                     >
-                      <Edit2 size={16} />
+                      <MoreVertical size={16} />
                     </button>
-                    <button 
-                      onClick={() => deleteLink(link.id)}
-                      className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                      title="Borrar enlace"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    
+                    {activeLinkDropdown === link.id && (
+                      <>
+                        <div 
+                          className="fixed inset-0 z-10" 
+                          onClick={() => setActiveLinkDropdown(null)} 
+                        />
+                        <div className="absolute right-0 top-10 mt-1 w-36 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 z-20 py-1 overflow-hidden">
+                          <button 
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                            onClick={() => { setActiveLinkDropdown(null); openEditLinkModal(link); }}
+                          >
+                            <Edit2 size={14} /> Editar
+                          </button>
+                          <button 
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                            onClick={() => { setActiveLinkDropdown(null); openMoveLinkModal(link); }}
+                          >
+                            <Folder size={14} /> Mover
+                          </button>
+                          <button 
+                            className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
+                            onClick={() => { setActiveLinkDropdown(null); deleteLink(link.id); }}
+                          >
+                            <Trash2 size={14} /> Eliminar
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               )
@@ -579,13 +866,75 @@ export default function LinkNestApp() {
         </div>
       </main>
 
+      {/* Modal Gestionar Categorías */}
+      {isManageCatsModalOpen && (
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md overflow-hidden flex flex-col max-h-[80vh] border border-gray-200 dark:border-gray-700">
+            <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-800/50">
+              <h2 className="font-semibold text-gray-800 dark:text-white flex items-center gap-2">
+                <LucideIcons.Settings size={18} className="text-blue-500" />
+                Gestionar Categorías
+              </h2>
+              <button onClick={() => setIsManageCatsModalOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto flex-1">
+              <button 
+                onClick={() => openAddCategoryModal(null)}
+                className="w-full flex items-center justify-center gap-2 p-2 mb-4 text-blue-600 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 rounded-lg transition-colors font-medium text-sm"
+              >
+                <Plus size={16} /> Crear Nueva Categoría
+              </button>
+              <div className="space-y-2">
+                {categories.length === 0 ? (
+                  <p className="text-center text-gray-500 text-sm">No hay categorías.</p>
+                ) : (
+                  categories.map(cat => (
+                    <div key={cat.id} className="flex items-center justify-between p-3 border border-gray-100 dark:border-gray-700 rounded-lg hover:border-gray-200 dark:hover:border-gray-600 bg-white dark:bg-gray-800 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div style={{ color: cat.color }} className="p-2 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                          <DynamicIcon name={cat.iconName} size={16} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{cat.name}</p>
+                          {cat.parentId && (
+                            <p className="text-xs text-gray-500">Subcategoría de {categories.find(c => c.id === cat.parentId)?.name}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button 
+                          onClick={() => openEditCategoryModal(cat)}
+                          className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-md transition-colors"
+                          title="Editar"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                        <button 
+                          onClick={() => deleteCategory(cat.id)}
+                          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-gray-700 rounded-md transition-colors"
+                          title="Eliminar"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal Agregar Categoría */}
       {isCatModalOpen && (
         <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md overflow-hidden flex flex-col max-h-full border border-gray-200 dark:border-gray-700">
             <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
-              <h2 className="text-lg font-bold text-gray-800 dark:text-white">
-                {modalParentId ? 'Agregar Subcategoría' : 'Nueva Categoría'}
+              <h2 className="font-semibold text-gray-800 dark:text-white">
+                {editingCategoryId ? 'Editar Categoría' : (modalParentId ? 'Agregar Subcategoría' : 'Nueva Categoría')}
               </h2>
               <button onClick={() => setIsCatModalOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1">
                 <X size={20} />
@@ -649,6 +998,110 @@ export default function LinkNestApp() {
                 onClick={saveCategory}
                 disabled={!newCatName.trim()}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+              >
+                Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Mover Enlace */}
+      {isMoveLinkModalOpen && (
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-sm overflow-hidden flex flex-col max-h-full border border-gray-200 dark:border-gray-700">
+            <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+              <h2 className="font-semibold text-gray-800 dark:text-white flex items-center gap-2">
+                <Folder size={18} className="text-blue-500" />
+                Mover Enlace
+              </h2>
+              <button onClick={() => setIsMoveLinkModalOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-4 overflow-y-auto">
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">Selecciona la nueva categoría para el enlace:</p>
+              
+              <div className="relative">
+                <div 
+                  onClick={() => setIsCatSelectorOpen(!isCatSelectorOpen)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg cursor-pointer flex justify-between items-center"
+                >
+                  <span className={!editLinkCat ? "text-gray-400" : ""}>
+                    {editLinkCat ? categories.find(c => c.id === editLinkCat)?.name : "Selecciona una categoría..."}
+                  </span>
+                  <ChevronDown size={16} className={`transition-transform ${isCatSelectorOpen ? 'rotate-180' : ''}`} />
+                </div>
+                
+                {isCatSelectorOpen && (
+                  <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl max-h-48 overflow-y-auto hide-scrollbar">
+                    {categories.filter(c => c.parentId === null).map(cat => {
+                      const hasChildren = categories.some(c => c.parentId === cat.id);
+                      const isExpanded = modalExpandedCats[cat.id];
+                      
+                      return (
+                        <div key={cat.id} className="border-b border-gray-50 dark:border-gray-700/50 last:border-0">
+                          <div 
+                            className={`flex items-center justify-between px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 ${editLinkCat === cat.id ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600' : 'text-gray-700 dark:text-gray-200'}`}
+                            onClick={(e) => { 
+                              if (hasChildren) {
+                                toggleModalExpand(cat.id, e);
+                              } else {
+                                setEditLinkCat(cat.id); 
+                                setIsCatSelectorOpen(false); 
+                              }
+                            }}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span style={{ color: cat.color }}><DynamicIcon name={cat.iconName} size={14} /></span>
+                              <span>{cat.name}</span>
+                            </div>
+                            {hasChildren && (
+                              <button onClick={(e) => toggleModalExpand(cat.id, e)} className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded">
+                                <ChevronDown size={14} className={`transition-transform text-gray-500 ${isExpanded ? 'rotate-180' : ''}`} />
+                              </button>
+                            )}
+                          </div>
+                          
+                          {hasChildren && isExpanded && (
+                            <div className="bg-gray-50 dark:bg-gray-800/40 py-1">
+                              <div 
+                                className={`flex items-center gap-2 pl-9 pr-3 py-1 text-xs cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 ${editLinkCat === cat.id ? 'text-blue-600 font-medium' : 'text-gray-500 dark:text-gray-400'}`}
+                                onClick={() => { setEditLinkCat(cat.id); setIsCatSelectorOpen(false); }}
+                              >
+                                ? Ninguna
+                              </div>
+                              {categories.filter(c => c.parentId === cat.id).map(sub => (
+                                <div 
+                                  key={sub.id}
+                                  className={`flex items-center gap-2 pl-9 pr-3 py-1 text-xs cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 ${editLinkCat === sub.id ? 'text-blue-600 font-medium' : 'text-gray-600 dark:text-gray-300'}`}
+                                  onClick={() => { setEditLinkCat(sub.id); setIsCatSelectorOpen(false); }}
+                                >
+                                  <span style={{ color: sub.color }}><DynamicIcon name={sub.iconName} size={12} /></span>
+                                  <span>{sub.name}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="p-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex justify-end gap-2">
+              <button 
+                onClick={() => setIsMoveLinkModalOpen(false)}
+                className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-sm font-medium transition-colors"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={saveMovedLink}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
               >
                 Guardar
               </button>
