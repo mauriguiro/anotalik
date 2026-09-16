@@ -16,7 +16,8 @@ import {
   Moon,
   Sun,
   Hash,
-  HelpCircle
+  HelpCircle,
+  Copy
 } from 'lucide-react';
 
 import { auth, db } from '../lib/firebase';
@@ -871,13 +872,20 @@ export default function LinkNestApp() {
                   </div>
                   
                   {/* Opciones */}
-                  <div className="relative pl-2 border-l border-gray-100 dark:border-gray-700 flex items-center">
+                  <div className="relative pl-2 border-l border-gray-100 dark:border-gray-700 flex flex-col items-center justify-center gap-0.5">
                     <button 
                       onClick={() => setActiveLinkDropdown(activeLinkDropdown === link.id ? null : link.id)}
-                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                       title="Opciones"
                     >
                       <MoreVertical size={16} />
+                    </button>
+                    <button 
+                      onClick={() => navigator.clipboard.writeText(link.url)}
+                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                      title="Copiar enlace"
+                    >
+                      <Copy size={14} />
                     </button>
                     
                     {activeLinkDropdown === link.id && (
