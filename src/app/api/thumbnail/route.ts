@@ -23,14 +23,39 @@ export async function GET(request: Request) {
 
   try {
     const fetchUrl = targetUrl.startsWith('http') ? targetUrl : `https://${targetUrl}`;
+    
+    // 1. Check Microlink for popular networks that block standard fetch (TikTok, Instagram, Twitter, etc)
+    // Microlink API is free for personal use and bypasses bot protection
+    if (domain.includes('tiktok.com') || domain.includes('instagram.com') || domain.includes('twitter.com') || domain.includes('x.com') || domain.includes('facebook.com')) {
+      try {
+        const mlRes = await fetch(`https://api.microlink.io?url=${encodeURIComponent(fetchUrl)}`);
+        if (mlRes.ok) {
+          const data = await mlRes.json();
+          if (data.data?.image?.url) {
+            return new NextResponse(null, { status: 302, headers: { ...headers, 'Location': data.data.image.url } });
+          }
+        }
+      } catch (e) {}
+    } else if (domain.includes('youtube.com') || domain.includes('youtu.be')) {
+      try {
+        const oembedRes = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(fetchUrl)}&format=json`);
+        if (oembedRes.ok) {
+          const data = await oembedRes.json();
+          if (data.thumbnail_url) {
+            return new NextResponse(null, { status: 302, headers: { ...headers, 'Location': data.thumbnail_url } });
+          }
+        }
+      } catch (e) {}
+    }
+
+    // 2. Fallback to HTML og:image parsing
     const res = await fetch(fetchUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.5',
       },
-      // Short timeout to not block rendering for too long on cold cache
-      signal: AbortSignal.timeout(4000)
+      signal: AbortSignal.timeout(8000)
     });
     
     if (res.ok) {

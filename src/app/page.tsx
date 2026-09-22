@@ -413,7 +413,7 @@ export default function LinkNestApp() {
         url: editLinkUrl,
         title: editLinkTitle,
         description: editLinkDesc,
-        image: `/api/thumbnail?url=${encodeURIComponent(editLinkUrl)}`,
+        image: `/api/thumbnail?url=${encodeURIComponent(editLinkUrl)}&v=2`,
         categoryId: finalCategoryId,
         tags: tagsArray
       };
@@ -781,7 +781,7 @@ export default function LinkNestApp() {
                     </div>
 
                     <img 
-                      src={link.image?.includes('favicons?domain=') ? `/api/thumbnail?url=${encodeURIComponent(link.url)}` : link.image} 
+                      src={link.image?.includes('favicons?domain=') ? `/api/thumbnail?url=${encodeURIComponent(link.url)}&v=2` : (link.image?.includes('/api/thumbnail') ? link.image + '&v=2' : link.image)} 
                       alt={link.title} 
                       className="w-full h-full object-cover absolute inset-0 z-10"
                       onError={(e) => {
