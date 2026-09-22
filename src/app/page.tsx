@@ -413,7 +413,7 @@ export default function LinkNestApp() {
         url: editLinkUrl,
         title: editLinkTitle,
         description: editLinkDesc,
-        image: `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
+        image: `/api/thumbnail?url=${encodeURIComponent(editLinkUrl)}`,
         categoryId: finalCategoryId,
         tags: tagsArray
       };
@@ -781,7 +781,7 @@ export default function LinkNestApp() {
                     </div>
 
                     <img 
-                      src={link.image} 
+                      src={link.image?.includes('favicons?domain=') ? `/api/thumbnail?url=${encodeURIComponent(link.url)}` : link.image} 
                       alt={link.title} 
                       className="w-full h-full object-cover absolute inset-0 z-10"
                       onError={(e) => {
