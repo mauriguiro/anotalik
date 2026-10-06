@@ -511,22 +511,22 @@ export default function LinkNestApp() {
   const renderLinkCard = (link: any) => {
     const category = categories.find(c => c.id === link.categoryId);
     return (
-      <div key={link.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-xs border border-gray-200 dark:border-gray-700 p-3 flex items-center gap-3 hover:shadow-md transition-shadow group">
+      <div key={link.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-2xs border border-gray-200/90 dark:border-gray-700/80 p-2 sm:p-2.5 flex items-center gap-2.5 hover:shadow-xs transition-shadow group">
         {/* Thumbnail */}
-        <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 dark:bg-gray-700 rounded-lg relative overflow-hidden flex-shrink-0 flex items-center justify-center">
+        <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gray-100 dark:bg-gray-700/60 rounded-lg relative overflow-hidden flex-shrink-0 flex items-center justify-center">
           {/* Fallback de fondo */}
           <div className="absolute inset-0 flex items-center justify-center bg-gray-50 dark:bg-gray-800 z-0">
             {(() => {
               const lUrl = link.url.toLowerCase();
-              if (lUrl.includes('youtube.') || lUrl.includes('youtu.be')) return <LucideIcons.Video size={28} className="text-red-500 opacity-40" />;
-              if (lUrl.includes('instagram.')) return <LucideIcons.Camera size={28} className="text-pink-500 opacity-40" />;
-              if (lUrl.includes('facebook.') || lUrl.includes('fb.')) return <LucideIcons.Users size={28} className="text-blue-600 opacity-40" />;
-              if (lUrl.includes('twitter.') || lUrl.includes('x.com')) return <LucideIcons.MessageCircle size={28} className="text-gray-500 opacity-40" />;
-              if (lUrl.includes('linkedin.')) return <LucideIcons.Briefcase size={28} className="text-blue-700 opacity-40" />;
-              if (lUrl.includes('github.')) return <LucideIcons.Code size={28} className="text-gray-600 opacity-40" />;
-              if (lUrl.includes('tiktok.')) return <LucideIcons.Music size={28} className="text-gray-700 opacity-40" />;
-              if (lUrl.includes('twitch.')) return <LucideIcons.Tv size={28} className="text-purple-500 opacity-40" />;
-              return <LucideIcons.Globe size={28} className="text-gray-400 opacity-40" />;
+              if (lUrl.includes('youtube.') || lUrl.includes('youtu.be')) return <LucideIcons.Video size={22} className="text-red-500 opacity-40" />;
+              if (lUrl.includes('instagram.')) return <LucideIcons.Camera size={22} className="text-pink-500 opacity-40" />;
+              if (lUrl.includes('facebook.') || lUrl.includes('fb.')) return <LucideIcons.Users size={22} className="text-blue-600 opacity-40" />;
+              if (lUrl.includes('twitter.') || lUrl.includes('x.com')) return <LucideIcons.MessageCircle size={22} className="text-gray-500 opacity-40" />;
+              if (lUrl.includes('linkedin.')) return <LucideIcons.Briefcase size={22} className="text-blue-700 opacity-40" />;
+              if (lUrl.includes('github.')) return <LucideIcons.Code size={22} className="text-gray-600 opacity-40" />;
+              if (lUrl.includes('tiktok.')) return <LucideIcons.Music size={22} className="text-gray-700 opacity-40" />;
+              if (lUrl.includes('twitch.')) return <LucideIcons.Tv size={22} className="text-purple-500 opacity-40" />;
+              return <LucideIcons.Globe size={22} className="text-gray-400 opacity-40" />;
             })()}
           </div>
 
@@ -557,26 +557,26 @@ export default function LinkNestApp() {
               style={{ backgroundColor: category.color }}
               title={category.name}
             >
-              <DynamicIcon name={category.iconName} size={12} />
+              <DynamicIcon name={category.iconName} size={11} />
             </span>
           )}
           {(() => {
             const lUrl = link.url.toLowerCase();
             let icon = null;
             let bg = '';
-            if (lUrl.includes('youtube.') || lUrl.includes('youtu.be')) { icon = <LucideIcons.Video size={12} />; bg = 'bg-red-500'; }
-            else if (lUrl.includes('instagram.')) { icon = <LucideIcons.Camera size={12} />; bg = 'bg-pink-600'; }
-            else if (lUrl.includes('facebook.') || lUrl.includes('fb.')) { icon = <LucideIcons.Users size={12} />; bg = 'bg-blue-600'; }
-            else if (lUrl.includes('twitter.') || lUrl.includes('x.com')) { icon = <LucideIcons.MessageCircle size={12} />; bg = 'bg-blue-400 dark:bg-gray-800'; }
-            else if (lUrl.includes('linkedin.')) { icon = <LucideIcons.Briefcase size={12} />; bg = 'bg-blue-700'; }
-            else if (lUrl.includes('github.')) { icon = <LucideIcons.Code size={12} />; bg = 'bg-gray-900 dark:bg-gray-700'; }
-            else if (lUrl.includes('tiktok.')) { icon = <LucideIcons.Music size={12} />; bg = 'bg-black dark:bg-gray-800'; }
-            else if (lUrl.includes('twitch.')) { icon = <LucideIcons.Tv size={12} />; bg = 'bg-purple-600'; }
+            if (lUrl.includes('youtube.') || lUrl.includes('youtu.be')) { icon = <LucideIcons.Video size={10} />; bg = 'bg-red-500'; }
+            else if (lUrl.includes('instagram.')) { icon = <LucideIcons.Camera size={10} />; bg = 'bg-pink-600'; }
+            else if (lUrl.includes('facebook.') || lUrl.includes('fb.')) { icon = <LucideIcons.Users size={10} />; bg = 'bg-blue-600'; }
+            else if (lUrl.includes('twitter.') || lUrl.includes('x.com')) { icon = <LucideIcons.MessageCircle size={10} />; bg = 'bg-blue-400 dark:bg-gray-800'; }
+            else if (lUrl.includes('linkedin.')) { icon = <LucideIcons.Briefcase size={10} />; bg = 'bg-blue-700'; }
+            else if (lUrl.includes('github.')) { icon = <LucideIcons.Code size={10} />; bg = 'bg-gray-900 dark:bg-gray-700'; }
+            else if (lUrl.includes('tiktok.')) { icon = <LucideIcons.Music size={10} />; bg = 'bg-black dark:bg-gray-800'; }
+            else if (lUrl.includes('twitch.')) { icon = <LucideIcons.Tv size={10} />; bg = 'bg-purple-600'; }
             
             if (!icon) return null;
             return (
               <span 
-                className={`absolute bottom-1 left-1 p-1 rounded-full text-white shadow-xs flex items-center justify-center z-20 ${bg}`}
+                className={`absolute bottom-1 left-1 p-0.5 rounded-full text-white shadow-xs flex items-center justify-center z-20 ${bg}`}
                 title="Red de origen"
               >
                 {icon}
@@ -587,34 +587,36 @@ export default function LinkNestApp() {
         
         {/* Info */}
         <div className="flex-1 min-w-0 flex flex-col justify-center">
-          <h3 className="font-semibold text-gray-800 dark:text-gray-100 text-sm sm:text-base line-clamp-1 mb-0.5" title={link.title}>
+          <h3 className="font-semibold text-gray-800 dark:text-gray-100 text-xs sm:text-sm line-clamp-1 mb-0.5" title={link.title}>
             {link.title}
           </h3>
-          <a href={link.url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-xs text-blue-500 dark:text-blue-400 hover:underline mb-1">
+          <a href={link.url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-[11px] text-blue-500 dark:text-blue-400 hover:underline mb-0.5">
             {(() => {
               const url = link.url.toLowerCase();
-              if (url.includes('youtube.') || url.includes('youtu.be')) return <LucideIcons.Video size={14} className="text-red-500 shrink-0" />;
-              if (url.includes('instagram.')) return <LucideIcons.Camera size={14} className="text-pink-500 shrink-0" />;
-              if (url.includes('facebook.') || url.includes('fb.')) return <LucideIcons.Users size={14} className="text-blue-600 shrink-0" />;
-              if (url.includes('twitter.') || url.includes('x.com')) return <LucideIcons.MessageCircle size={14} className="text-blue-400 dark:text-gray-300 shrink-0" />;
-              if (url.includes('linkedin.')) return <LucideIcons.Briefcase size={14} className="text-blue-700 shrink-0" />;
-              if (url.includes('github.')) return <LucideIcons.Code size={14} className="text-gray-800 dark:text-gray-200 shrink-0" />;
-              if (url.includes('tiktok.')) return <LucideIcons.Music size={14} className="text-gray-900 dark:text-gray-100 shrink-0" />;
-              if (url.includes('twitch.')) return <LucideIcons.Tv size={14} className="text-purple-500 shrink-0" />;
-              return <LucideIcons.Globe size={14} className="text-gray-400 shrink-0" />;
+              if (url.includes('youtube.') || url.includes('youtu.be')) return <LucideIcons.Video size={12} className="text-red-500 shrink-0" />;
+              if (url.includes('instagram.')) return <LucideIcons.Camera size={12} className="text-pink-500 shrink-0" />;
+              if (url.includes('facebook.') || url.includes('fb.')) return <LucideIcons.Users size={12} className="text-blue-600 shrink-0" />;
+              if (url.includes('twitter.') || url.includes('x.com')) return <LucideIcons.MessageCircle size={12} className="text-blue-400 dark:text-gray-300 shrink-0" />;
+              if (url.includes('linkedin.')) return <LucideIcons.Briefcase size={12} className="text-blue-700 shrink-0" />;
+              if (url.includes('github.')) return <LucideIcons.Code size={12} className="text-gray-800 dark:text-gray-200 shrink-0" />;
+              if (url.includes('tiktok.')) return <LucideIcons.Music size={12} className="text-gray-900 dark:text-gray-100 shrink-0" />;
+              if (url.includes('twitch.')) return <LucideIcons.Tv size={12} className="text-purple-500 shrink-0" />;
+              return <LucideIcons.Globe size={12} className="text-gray-400 shrink-0" />;
             })()}
             <span className="truncate">{link.url}</span>
           </a>
-          <p className={`text-xs sm:text-sm line-clamp-1 sm:line-clamp-2 ${link.description ? 'text-gray-600 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500 italic'}`}>
-            {link.description ? link.description : '(descripción)'}
-          </p>
+          {link.description ? (
+            <p className="text-[11px] text-gray-500 dark:text-gray-400 line-clamp-1">
+              {link.description}
+            </p>
+          ) : null}
           
           {/* Tags */}
           {link.tags && link.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-1.5">
+            <div className="flex flex-wrap gap-1 mt-1">
               {link.tags.map((tag: string, i: number) => (
-                <span key={i} className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
-                  <Hash size={10} className="mr-0.5 opacity-50"/> {tag}
+                <span key={i} className="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-medium bg-gray-100 dark:bg-gray-700/80 text-gray-600 dark:text-gray-300">
+                  <Hash size={9} className="mr-0.5 opacity-50"/> {tag}
                 </span>
               ))}
             </div>
@@ -622,20 +624,20 @@ export default function LinkNestApp() {
         </div>
         
         {/* Opciones */}
-        <div className="relative pl-2 border-l border-gray-100 dark:border-gray-700 flex flex-col items-center justify-center gap-0.5">
+        <div className="relative pl-1.5 border-l border-gray-100 dark:border-gray-700/80 flex flex-col items-center justify-center gap-0.5">
           {/* Estrellita de favorito (arriba del menú de los tres puntitos) */}
           <button 
             type="button"
             onClick={(e) => toggleFavoriteLink(link, e)}
-            className={`p-1.5 rounded-md transition-colors ${
+            className={`p-1 rounded-md transition-colors ${
               link.isFavorite 
-                ? 'text-yellow-400 hover:text-yellow-500 bg-yellow-50/60 dark:bg-yellow-900/20' 
+                ? 'text-yellow-400 hover:text-yellow-500 bg-yellow-50/70 dark:bg-yellow-900/20' 
                 : 'text-gray-300 dark:text-gray-600 hover:text-yellow-400 dark:hover:text-yellow-400 hover:bg-gray-100 dark:hover:bg-gray-700'
             }`}
             title={link.isFavorite ? "Quitar de favoritos" : "Marcar como favorito"}
           >
             <Star 
-              size={15} 
+              size={14} 
               className={link.isFavorite ? "fill-yellow-400 text-yellow-400" : ""} 
             />
           </button>
@@ -643,18 +645,18 @@ export default function LinkNestApp() {
           <button 
             type="button"
             onClick={() => setActiveLinkDropdown(activeLinkDropdown === link.id ? null : link.id)}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             title="Opciones"
           >
-            <MoreVertical size={16} />
+            <MoreVertical size={14} />
           </button>
           <button 
             type="button"
             onClick={() => navigator.clipboard.writeText(link.url)}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             title="Copiar enlace"
           >
-            <Copy size={14} />
+            <Copy size={13} />
           </button>
           
           {activeLinkDropdown === link.id && (
@@ -706,7 +708,7 @@ export default function LinkNestApp() {
     if (children.length === 0) return null;
 
     return (
-      <div className={level > 0 ? "ml-3 sm:ml-6 pl-3 sm:pl-4 border-l-2 border-blue-200 dark:border-blue-900/60 space-y-3 mt-3" : "space-y-3"}>
+      <div className={level > 0 ? "ml-2.5 sm:ml-5 pl-2 sm:pl-3 border-l-2 border-blue-200/70 dark:border-blue-900/40 space-y-2 mt-2" : "space-y-2"}>
         {children.map(cat => {
           const subCats = categories.filter(c => c.parentId === cat.id);
           const catLinks = links.filter(l => l.categoryId === cat.id);
@@ -717,23 +719,23 @@ export default function LinkNestApp() {
           return (
             <div 
               key={cat.id} 
-              className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-xs hover:border-gray-300 dark:hover:border-gray-600 transition-all overflow-hidden"
+              className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200/90 dark:border-gray-700/80 shadow-2xs hover:border-blue-300 dark:hover:border-blue-700 transition-all overflow-hidden"
             >
               {/* Header / Main Category Row */}
-              <div className="p-3 sm:p-4 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="px-2.5 py-2 sm:px-3 sm:py-2.5 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
                   {/* Expand / Collapse Button */}
                   {hasChildrenOrLinks ? (
                     <button
                       type="button"
                       onClick={(e) => toggleExpand(cat.id, e)}
-                      className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                      className="p-1 rounded-md text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shrink-0"
                       title={isExpanded ? "Colapsar" : "Expandir"}
                     >
-                      {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+                      {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                     </button>
                   ) : (
-                    <div className="w-8 flex items-center justify-center text-gray-300 dark:text-gray-600">
+                    <div className="w-6 flex items-center justify-center text-gray-300 dark:text-gray-600 shrink-0">
                       <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
                     </div>
                   )}
@@ -741,9 +743,9 @@ export default function LinkNestApp() {
                   {/* Icon */}
                   <div 
                     style={{ backgroundColor: `${cat.color}15`, color: cat.color }}
-                    className="p-2 sm:p-2.5 rounded-xl shrink-0 flex items-center justify-center"
+                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg shrink-0 flex items-center justify-center"
                   >
-                    <DynamicIcon name={cat.iconName} size={18} />
+                    <DynamicIcon name={cat.iconName} size={16} />
                   </div>
 
                   {/* Name & Badges */}
@@ -751,23 +753,23 @@ export default function LinkNestApp() {
                     className="min-w-0 cursor-pointer flex-1"
                     onClick={() => setActiveCategory(cat.id)}
                   >
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-semibold text-gray-800 dark:text-gray-100 text-sm sm:text-base hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <h3 className="font-semibold text-gray-800 dark:text-gray-100 text-xs sm:text-sm hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate">
                         {cat.name}
                       </h3>
 
                       {/* Subcategories badge */}
                       {subCats.length > 0 && (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 border border-blue-100 dark:border-blue-800/40">
-                          <Folder size={11} /> {subCats.length} {subCats.length === 1 ? 'subcategoría' : 'subcategorías'}
+                        <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 border border-blue-100 dark:border-blue-800/40">
+                          <Folder size={10} /> {subCats.length}
                         </span>
                       )}
 
                       {/* Links badge */}
-                      <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700/60 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600">
-                        <LinkIcon size={11} /> {catLinks.length} {catLinks.length === 1 ? 'enlace' : 'enlaces'}
+                      <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700/60 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600">
+                        <LinkIcon size={10} /> {catLinks.length}
                         {totalRecursiveLinks !== catLinks.length && (
-                          <span className="text-gray-400 dark:text-gray-400 font-normal">({totalRecursiveLinks} total)</span>
+                          <span className="text-gray-400 dark:text-gray-400 font-normal">({totalRecursiveLinks})</span>
                         )}
                       </span>
                     </div>
@@ -775,59 +777,59 @@ export default function LinkNestApp() {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                <div className="flex items-center gap-1 shrink-0">
                   {/* Entrar / Abrir categoría */}
                   <button
                     type="button"
                     onClick={() => setActiveCategory(cat.id)}
-                    className="px-2.5 sm:px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
+                    className="px-2 py-1 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-md text-[11px] font-medium flex items-center gap-0.5 transition-colors"
                     title="Abrir vista de enlaces"
                   >
                     <span>Abrir</span>
-                    <LucideIcons.ArrowRight size={13} />
+                    <LucideIcons.ArrowRight size={12} />
                   </button>
 
                   {/* Añadir subcategoría */}
                   <button
                     type="button"
                     onClick={(e) => openAddCategoryModal(cat.id, e)}
-                    className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                    className="p-1 text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-md transition-colors"
                     title="Añadir subcategoría"
                   >
-                    <Plus size={16} />
+                    <Plus size={15} />
                   </button>
 
                   {/* Editar */}
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); openEditCategoryModal(cat); }}
-                    className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                    className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors"
                     title="Editar categoría"
                   >
-                    <Edit2 size={15} />
+                    <Edit2 size={14} />
                   </button>
                 </div>
               </div>
 
               {/* Expanded Content: Subcategories and direct links */}
               {isExpanded && (
-                <div className="px-3 pb-3 sm:px-4 sm:pb-4 pt-1 bg-gray-50/50 dark:bg-gray-900/20 border-t border-gray-100 dark:border-gray-700/50">
+                <div className="px-2.5 pb-2.5 pt-1.5 sm:px-3 sm:pb-3 bg-gray-50/50 dark:bg-gray-900/20 border-t border-gray-100 dark:border-gray-700/50">
                   {/* Direct links preview inside this category */}
                   {catLinks.length > 0 && (
-                    <div className="mb-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
-                          <LinkIcon size={12} /> Enlaces directos ({catLinks.length})
+                    <div className="mb-2">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1">
+                          <LinkIcon size={11} /> Enlaces ({catLinks.length})
                         </span>
                         <button
                           type="button"
                           onClick={() => setActiveCategory(cat.id)}
-                          className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                          className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5"
                         >
-                          Ver todos en detalle →
+                          Ver todos →
                         </button>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5 sm:gap-2">
                         {catLinks.map(link => renderLinkCard(link))}
                       </div>
                     </div>
@@ -835,16 +837,16 @@ export default function LinkNestApp() {
 
                   {/* Subcategories tree */}
                   {subCats.length > 0 && (
-                    <div className="mt-2">
-                      <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                        <Folder size={12} /> Subcategorías de {cat.name} ({subCats.length})
+                    <div className="mt-1.5">
+                      <div className="text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                        <Folder size={11} /> Subcategorías ({subCats.length})
                       </div>
                       {renderMainCategoryTree(cat.id, level + 1)}
                     </div>
                   )}
 
                   {subCats.length === 0 && catLinks.length === 0 && (
-                    <div className="text-center py-3 text-xs text-gray-400 dark:text-gray-500 flex items-center justify-center gap-2">
+                    <div className="text-center py-2.5 text-xs text-gray-400 dark:text-gray-500 flex items-center justify-center gap-2">
                       <span>Esta categoría aún no tiene subcategorías ni enlaces.</span>
                       <button
                         type="button"
@@ -871,6 +873,7 @@ export default function LinkNestApp() {
       </div>
     );
   };
+
 
   const renderCategoryTree = (parentId: string | null, level = 0) => {
     const children = categories.filter(c => c.parentId === parentId);
@@ -1638,60 +1641,38 @@ export default function LinkNestApp() {
                 /* HOME MAIN SCREEN: NESTED CATEGORIES VIEW */
                 <div>
                   {/* Header de Categorías Anidadas */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-gray-200 dark:border-gray-800">
-                    <div>
-                      <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                        <Folder className="text-blue-500" size={22} />
-                        Categorías Anidadas
-                      </h2>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        {categories.length} categorías organizadas jerárquicamente • {links.length} enlaces guardados
-                      </p>
-                    </div>
+                  <div className="flex items-center justify-between gap-3 mb-3 pb-2.5 border-b border-gray-200 dark:border-gray-800">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                      {categories.length} categorías organizadas • {links.length} enlaces guardados
+                    </p>
 
-                    <div className="flex items-center flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={expandAllCategories}
-                        className="px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/60 border border-gray-200 dark:border-gray-700 rounded-lg transition-colors flex items-center gap-1 shadow-2xs"
-                      >
-                        <ChevronDown size={14} /> Expandir todo
-                      </button>
-                      <button
-                        type="button"
-                        onClick={collapseAllCategories}
-                        className="px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/60 border border-gray-200 dark:border-gray-700 rounded-lg transition-colors flex items-center gap-1 shadow-2xs"
-                      >
-                        <ChevronRight size={14} /> Colapsar todo
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => openAddCategoryModal(null)}
-                        className="px-3.5 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center gap-1.5 shadow-xs"
-                      >
-                        <Plus size={15} /> Nueva Categoría
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => openAddCategoryModal(null)}
+                      className="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center gap-1 shadow-xs shrink-0"
+                    >
+                      <Plus size={14} /> Nueva Categoría
+                    </button>
                   </div>
 
                   {/* Árbol Anidado de Categorías */}
                   {categories.filter(c => c.parentId === null).length === 0 ? (
-                    <div className="py-16 text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 p-8">
-                      <Folder size={52} className="mx-auto mb-3 opacity-20 text-blue-500" />
-                      <p className="font-semibold text-base mb-1 text-gray-800 dark:text-gray-200">No hay categorías creadas aún</p>
-                      <p className="text-xs text-gray-400 mb-5 max-w-sm mx-auto">
+                    <div className="py-12 text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-xl border border-dashed border-gray-300 dark:border-gray-700 p-6">
+                      <Folder size={44} className="mx-auto mb-2 opacity-20 text-blue-500" />
+                      <p className="font-semibold text-sm mb-1 text-gray-800 dark:text-gray-200">No hay categorías creadas aún</p>
+                      <p className="text-xs text-gray-400 mb-4 max-w-sm mx-auto">
                         Crea tu primera categoría para empezar a organizar tus carpetas y enlaces de manera anidada.
                       </p>
                       <button
                         type="button"
                         onClick={() => openAddCategoryModal(null)}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-medium transition-colors inline-flex items-center gap-1.5"
+                        className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition-colors inline-flex items-center gap-1"
                       >
-                        <Plus size={16} /> Crear Primera Categoría
+                        <Plus size={15} /> Crear Primera Categoría
                       </button>
                     </div>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-2">
                       {renderMainCategoryTree(null)}
                     </div>
                   )}
