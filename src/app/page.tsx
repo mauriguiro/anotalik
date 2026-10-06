@@ -18,7 +18,10 @@ import {
   Hash,
   HelpCircle,
   Copy,
-  Star
+  Star,
+  Check,
+  Globe,
+  ExternalLink
 } from 'lucide-react';
 
 import { auth, db } from '../lib/firebase';
@@ -1089,24 +1092,9 @@ export default function LinkNestApp() {
 
             {authMode !== 'forgot_password' && (
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Contraseña
-                  </label>
-                  {authMode === 'login' && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAuthMode('forgot_password');
-                        setAuthError('');
-                        setAuthSuccessMessage('');
-                      }}
-                      className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
-                    >
-                      ¿Olvidaste tu contraseña o usuario?
-                    </button>
-                  )}
-                </div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Contraseña
+                </label>
                 <input 
                   type="password" 
                   value={password} 
@@ -1116,6 +1104,21 @@ export default function LinkNestApp() {
                   placeholder="••••••••"
                   className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 dark:text-gray-100" 
                 />
+                {authMode === 'login' && (
+                  <div className="mt-1.5 text-right">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAuthMode('forgot_password');
+                        setAuthError('');
+                        setAuthSuccessMessage('');
+                      }}
+                      className="text-xs text-blue-600 dark:text-blue-400 hover:underline inline-block"
+                    >
+                      ¿Olvidaste tu contraseña o usuario?
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -1162,6 +1165,13 @@ export default function LinkNestApp() {
                 {authMode === 'login' ? '¿No tienes cuenta? Regístrate' : '¿Ya tienes cuenta? Inicia sesión'}
               </button>
             )}
+          </div>
+
+          {/* Firma CAELUM */}
+          <div className="mt-8 pt-4 border-t border-gray-100 dark:border-gray-700/80 text-center">
+            <p className="text-[11px] font-semibold tracking-wider text-gray-400 dark:text-gray-500 uppercase">
+              By CAELUM Bussines group. Software / Labs
+            </p>
           </div>
         </div>
       </div>
@@ -1251,6 +1261,11 @@ export default function LinkNestApp() {
             <LucideIcons.LogOut size={18} />
           </button>
         </div>
+
+        {/* Firma CAELUM */}
+        <div className="px-3 py-2 text-center text-[10px] text-gray-400 dark:text-gray-500 font-medium border-t border-gray-100 dark:border-gray-800/80 tracking-wide">
+          By CAELUM Bussines group. Software / Labs
+        </div>
       </aside>
 
       {/* Main Content */}
@@ -1304,19 +1319,29 @@ export default function LinkNestApp() {
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-3 sm:p-4 mb-6">
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <div className="flex-1 relative">
-                <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={18} />
+                <LinkIcon className={`absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors ${newLinkUrl ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'}`} size={18} />
                 <input 
                   type="text" 
                   value={newLinkUrl}
                   onChange={(e) => setNewLinkUrl(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && saveNewLink()}
                   placeholder="Pega una URL aquí para guardar rápidamente..." 
-                  className="w-full pl-10 pr-4 py-2.5 sm:py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:border-blue-500 dark:focus:border-blue-400 focus:bg-white dark:focus:bg-gray-800 outline-none transition-all dark:text-white"
+                  className={`w-full pl-10 ${newLinkUrl ? 'pr-10' : 'pr-4'} py-2.5 sm:py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white font-medium placeholder-gray-400 dark:placeholder-gray-500 focus:border-blue-500 dark:focus:border-blue-400 focus:bg-white dark:focus:bg-gray-800 outline-none transition-all`}
                 />
+                {newLinkUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setNewLinkUrl('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-full transition-colors"
+                    title="Limpiar enlace"
+                  >
+                    <X size={16} />
+                  </button>
+                )}
               </div>
               <button 
                 onClick={saveNewLink}
-                className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium text-sm transition-colors flex items-center justify-center gap-2 shadow-sm"
+                className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium text-sm transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer shrink-0"
               >
                 <Plus size={18} />
                 Guardar
@@ -1941,73 +1966,184 @@ export default function LinkNestApp() {
 
       {/* Modal Editar / Crear Enlace */}
       {isLinkModalOpen && (
-        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md overflow-hidden flex flex-col max-h-full border border-gray-200 dark:border-gray-700">
-            <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
-              <h2 className="text-lg font-bold text-gray-800 dark:text-white">
-                {editingLink ? 'Editar Enlace' : 'Guardar Nuevo Enlace'}
-              </h2>
-              <button onClick={() => setIsLinkModalOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1">
-                <X size={20} />
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-[100] flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col border border-gray-100 dark:border-gray-700/80 my-auto animate-in fade-in zoom-in-95 duration-150">
+            {/* Header */}
+            <div className="p-4 sm:p-5 border-b border-gray-100 dark:border-gray-700/70 flex justify-between items-start bg-gradient-to-r from-blue-50/60 to-indigo-50/40 dark:from-gray-800 dark:to-gray-800">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20 shrink-0">
+                  {editingLink ? <Edit2 size={18} /> : <LinkIcon size={18} />}
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-white leading-tight">
+                    {editingLink ? 'Editar Enlace' : 'Guardar Nuevo Enlace'}
+                  </h2>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    {editingLink 
+                      ? 'Actualiza los datos o reubica el enlace en tus categorías.' 
+                      : 'Revisa los detalles y clasifica tu enlace para encontrarlo siempre.'}
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsLinkModalOpen(false)} 
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+              >
+                <X size={18} />
               </button>
             </div>
             
-            <div className="p-4 overflow-y-auto space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">URL</label>
-                <input 
-                  type="text" 
-                  value={editLinkUrl}
-                  onChange={e => setEditLinkUrl(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
-                  readOnly
-                />
+            <div className="p-4 sm:p-5 overflow-y-auto space-y-4 max-h-[70vh]">
+              {/* Tarjeta de URL Detectada */}
+              <div className="bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-800/60 rounded-xl p-3.5 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 min-w-0">
+                    {/* Favicon del dominio */}
+                    <div className="w-6 h-6 rounded-md bg-white dark:bg-gray-800 border border-blue-200 dark:border-blue-700 flex items-center justify-center overflow-hidden shrink-0 shadow-2xs">
+                      {(() => {
+                        let domain = '';
+                        try {
+                          const u = editLinkUrl.startsWith('http') ? editLinkUrl : `https://${editLinkUrl}`;
+                          domain = new URL(u).hostname;
+                        } catch {
+                          domain = '';
+                        }
+                        if (domain) {
+                          return (
+                            <img 
+                              src={`https://www.google.com/s2/favicons?domain=${domain}&sz=64`}
+                              alt="favicon" 
+                              className="w-4 h-4 object-contain"
+                              onError={(e) => {
+                                (e.target as HTMLElement).style.display = 'none';
+                              }}
+                            />
+                          );
+                        }
+                        return <Globe size={14} className="text-blue-500" />;
+                      })()}
+                    </div>
+                    <span className="text-xs font-bold text-blue-900 dark:text-blue-200 truncate">
+                      {(() => {
+                        try {
+                          const u = editLinkUrl.startsWith('http') ? editLinkUrl : `https://${editLinkUrl}`;
+                          return new URL(u).hostname.replace('www.', '');
+                        } catch {
+                          return 'Enlace web';
+                        }
+                      })()}
+                    </span>
+                  </div>
+                  
+                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/40 px-2 py-0.5 rounded-full shrink-0">
+                    <Check size={11} strokeWidth={3} /> Enlace detectado
+                  </span>
+                </div>
+
+                <div className="relative">
+                  <input 
+                    type="text" 
+                    value={editLinkUrl}
+                    onChange={e => setEditLinkUrl(e.target.value)}
+                    placeholder="https://ejemplo.com"
+                    className="w-full pl-3 pr-8 py-2 bg-white dark:bg-gray-900 border border-blue-200 dark:border-blue-800/80 rounded-lg text-xs sm:text-sm font-semibold text-blue-700 dark:text-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  />
+                  {editLinkUrl && (
+                    <a 
+                      href={editLinkUrl.startsWith('http') ? editLinkUrl : `https://${editLinkUrl}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-blue-400 hover:text-blue-600 dark:hover:text-blue-200"
+                      title="Probar enlace"
+                    >
+                      <ExternalLink size={14} />
+                    </a>
+                  )}
+                </div>
               </div>
               
+              {/* Título */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Título</label>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-1.5">
+                  Título del Enlace <span className="text-red-500">*</span>
+                </label>
                 <input 
                   type="text" 
                   value={editLinkTitle}
                   onChange={e => setEditLinkTitle(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="ej. Guía de programación, Mi receta favorita, etc."
+                  className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white rounded-xl text-sm font-semibold placeholder-gray-400 dark:placeholder-gray-500 focus:bg-white dark:focus:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  required
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descripción <span className="text-gray-400 font-normal">(opcional)</span></label>
-                <textarea 
-                  value={editLinkDesc}
-                  onChange={e => setEditLinkDesc(e.target.value)}
-                  placeholder="Agrega una descripción..."
-                  rows={1}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                />
-              </div>
-
+              {/* Categoría con selector visual */}
               <div className="relative">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-1.5">
                   Categoría <span className="text-red-500">*</span>
                 </label>
-                <div 
-                  onClick={() => setIsCatSelectorOpen(!isCatSelectorOpen)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg cursor-pointer flex justify-between items-center"
-                >
-                  <span className={!editLinkCat ? "text-gray-400" : ""}>
-                    {editLinkCat ? categories.find(c => c.id === editLinkCat)?.name : "Selecciona una categoría obligatoria..."}
-                  </span>
-                  <ChevronDown size={16} className={`transition-transform ${isCatSelectorOpen ? 'rotate-180' : ''}`} />
-                </div>
                 
+                {/* Botón selector de categoría */}
+                <button
+                  type="button"
+                  onClick={() => setIsCatSelectorOpen(!isCatSelectorOpen)}
+                  className={`w-full px-3.5 py-2.5 border rounded-xl flex items-center justify-between text-left transition-all cursor-pointer ${
+                    editLinkCat 
+                      ? 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:border-blue-400' 
+                      : 'border-amber-300 dark:border-amber-600/70 bg-amber-50/50 dark:bg-amber-950/20'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    {(() => {
+                      const selectedCat = categories.find(c => c.id === editLinkCat);
+                      if (selectedCat) {
+                        const path = getCategoryPath(selectedCat.id);
+                        return (
+                          <>
+                            <div 
+                              style={{ backgroundColor: `${selectedCat.color}20`, color: selectedCat.color }}
+                              className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                            >
+                              <DynamicIcon name={selectedCat.iconName} size={15} />
+                            </div>
+                            <div className="min-w-0">
+                              <span className="text-sm font-semibold text-gray-900 dark:text-white block truncate">
+                                {selectedCat.name}
+                              </span>
+                              {path.length > 1 && (
+                                <span className="text-[10px] text-gray-500 dark:text-gray-400 block truncate">
+                                  {path.map(p => p.name).join(' › ')}
+                                </span>
+                              )}
+                            </div>
+                          </>
+                        );
+                      }
+                      return (
+                        <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+                          Selecciona una categoría...
+                        </span>
+                      );
+                    })()}
+                  </div>
+                  <ChevronDown size={18} className={`text-gray-400 transition-transform ${isCatSelectorOpen ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {/* Desplegable de Categorías */}
                 {isCatSelectorOpen && (
-                  <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl max-h-48 overflow-y-auto hide-scrollbar">
+                  <div className="absolute z-50 left-0 right-0 mt-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl max-h-56 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-700/60 animate-in fade-in duration-100">
                     {categories.filter(c => c.parentId === null).map(cat => {
                       const hasChildren = categories.some(c => c.parentId === cat.id);
                       const isExpanded = modalExpandedCats[cat.id];
+                      const isSelected = editLinkCat === cat.id;
                       return (
-                        <div key={cat.id} className="border-b border-gray-50 dark:border-gray-700/50 last:border-0">
+                        <div key={cat.id} className="p-1">
                           <div 
-                            className={`flex items-center justify-between px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 ${editLinkCat === cat.id ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600' : 'text-gray-700 dark:text-gray-200'}`}
+                            className={`flex items-center justify-between px-2.5 py-2 rounded-lg text-sm cursor-pointer transition-colors ${
+                              isSelected 
+                                ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-semibold' 
+                                : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/60'
+                            }`}
                             onClick={(e) => { 
                               if (hasChildren) {
                                 toggleModalExpand(cat.id, e);
@@ -2017,69 +2153,136 @@ export default function LinkNestApp() {
                               }
                             }}
                           >
-                            <div className="flex items-center gap-2">
-                              <span style={{ color: cat.color }}><DynamicIcon name={cat.iconName} size={14} /></span>
+                            <div className="flex items-center gap-2.5">
+                              <div 
+                                style={{ backgroundColor: `${cat.color}20`, color: cat.color }}
+                                className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
+                              >
+                                <DynamicIcon name={cat.iconName} size={13} />
+                              </div>
                               <span>{cat.name}</span>
                             </div>
-                            {hasChildren && (
-                              <button onClick={(e) => toggleModalExpand(cat.id, e)} className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded">
-                                <ChevronDown size={14} className={`transition-transform text-gray-500 ${isExpanded ? 'rotate-180' : ''}`} />
+                            {hasChildren ? (
+                              <button 
+                                type="button"
+                                onClick={(e) => toggleModalExpand(cat.id, e)} 
+                                className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-gray-400"
+                              >
+                                <ChevronDown size={14} className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                               </button>
+                            ) : isSelected && (
+                              <Check size={16} className="text-blue-600 dark:text-blue-400" />
                             )}
                           </div>
                           
+                          {/* Subcategorías */}
                           {hasChildren && isExpanded && (
-                            <div className="bg-gray-50 dark:bg-gray-800/40 py-1">
+                            <div className="ml-3 pl-3 border-l-2 border-gray-100 dark:border-gray-700 space-y-0.5 my-1">
+                              {/* Opción de guardar directamente en la categoría padre */}
                               <div 
-                                className={`flex items-center gap-2 pl-9 pr-3 py-1 text-xs cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 ${editLinkCat === cat.id ? 'text-blue-600 font-medium' : 'text-gray-500 dark:text-gray-400'}`}
+                                className={`flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs cursor-pointer transition-colors ${
+                                  isSelected 
+                                    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 font-medium' 
+                                    : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/50'
+                                }`}
                                 onClick={() => { setEditLinkCat(cat.id); setIsCatSelectorOpen(false); }}
                               >
-                                ↳ Ninguna
+                                <span>↳ Guardar en categoría principal "{cat.name}"</span>
+                                {isSelected && <Check size={13} className="text-blue-600" />}
                               </div>
-                              {categories.filter(c => c.parentId === cat.id).map(sub => (
-                                <div 
-                                  key={sub.id}
-                                  className={`flex items-center gap-2 pl-9 pr-3 py-1 text-xs cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 ${editLinkCat === sub.id ? 'text-blue-600 font-medium' : 'text-gray-600 dark:text-gray-300'}`}
-                                  onClick={() => { setEditLinkCat(sub.id); setIsCatSelectorOpen(false); }}
-                                >
-                                  <span style={{ color: sub.color }}><DynamicIcon name={sub.iconName} size={12} /></span>
-                                  <span>{sub.name}</span>
-                                </div>
-                              ))}
+                              {categories.filter(c => c.parentId === cat.id).map(sub => {
+                                const isSubSelected = editLinkCat === sub.id;
+                                return (
+                                  <div 
+                                    key={sub.id}
+                                    className={`flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs cursor-pointer transition-colors ${
+                                      isSubSelected 
+                                        ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 font-semibold' 
+                                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50'
+                                    }`}
+                                    onClick={() => { setEditLinkCat(sub.id); setIsCatSelectorOpen(false); }}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <div 
+                                        style={{ backgroundColor: `${sub.color}20`, color: sub.color }}
+                                        className="w-5 h-5 rounded flex items-center justify-center shrink-0"
+                                      >
+                                        <DynamicIcon name={sub.iconName} size={11} />
+                                      </div>
+                                      <span>{sub.name}</span>
+                                    </div>
+                                    {isSubSelected && <Check size={13} className="text-blue-600" />}
+                                  </div>
+                                );
+                              })}
                             </div>
                           )}
                         </div>
-                      )
+                      );
                     })}
                   </div>
                 )}
               </div>
 
+              {/* Descripción */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Etiquetas <span className="text-gray-400 font-normal">(opcional)</span></label>
-                <input 
-                  type="text" 
-                  value={editLinkTags}
-                  onChange={e => setEditLinkTags(e.target.value)}
-                  placeholder="ej. urgente, leer-luego, recetas"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-1.5">
+                  Descripción o Notas <span className="text-gray-400 font-normal lowercase">(opcional)</span>
+                </label>
+                <textarea 
+                  value={editLinkDesc}
+                  onChange={e => setEditLinkDesc(e.target.value)}
+                  placeholder="Escribe detalles importantes, recordatorio o notas personales..."
+                  rows={2}
+                  className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white rounded-xl text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:bg-white dark:focus:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
                 />
+              </div>
+
+              {/* Etiquetas */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-1.5">
+                  Etiquetas <span className="text-gray-400 font-normal lowercase">(opcional, separadas por coma)</span>
+                </label>
+                <div className="relative">
+                  <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={15} />
+                  <input 
+                    type="text" 
+                    value={editLinkTags}
+                    onChange={e => setEditLinkTags(e.target.value)}
+                    placeholder="trabajo, tutorial, importante"
+                    className="w-full pl-9 pr-3.5 py-2.5 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white rounded-xl text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:bg-white dark:focus:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  />
+                </div>
+                {/* Preview de chips de etiquetas si se escribieron */}
+                {editLinkTags.trim() !== '' && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {editLinkTags.split(',').map(t => t.trim()).filter(Boolean).map((t, idx) => (
+                      <span key={idx} className="inline-flex items-center gap-1 text-[11px] font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 border border-blue-200 dark:border-blue-800 px-2 py-0.5 rounded-md">
+                        #{t}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
             
-            <div className="p-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex justify-end gap-2">
+            {/* Footer con botones modernos */}
+            <div className="p-4 sm:p-5 border-t border-gray-100 dark:border-gray-700/70 bg-gray-50/80 dark:bg-gray-800/80 flex items-center justify-end gap-3">
               <button 
+                type="button"
                 onClick={() => setIsLinkModalOpen(false)}
-                className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-sm font-medium transition-colors"
+                className="px-4 py-2.5 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl text-sm font-semibold transition-colors cursor-pointer"
               >
                 Cancelar
               </button>
               <button 
+                type="button"
                 onClick={saveEditedLink}
                 disabled={!editLinkTitle.trim() || !editLinkCat}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+                className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-sm font-bold transition-all shadow-md hover:shadow-lg flex items-center gap-2 cursor-pointer"
               >
-                Guardar Cambios
+                <Check size={16} strokeWidth={2.5} />
+                {editingLink ? 'Actualizar Enlace' : 'Guardar Enlace'}
               </button>
             </div>
           </div>
