@@ -2594,7 +2594,7 @@ export default function LinkNestApp() {
                                 backgroundColor: isDarkMode ? `${cat.color}15` : `${cat.color}12`,
                                 borderColor: `${cat.color}35`
                               }}
-                              className="rounded-xl border px-2.5 py-2 hover:shadow-sm hover:-translate-y-0.5 transition-all duration-150 cursor-pointer flex flex-col justify-between group relative overflow-hidden active:scale-[0.98]"
+                              className="rounded-xl border p-2.5 sm:p-3 hover:shadow-md hover:-translate-y-0.5 transition-all duration-150 cursor-pointer flex flex-col justify-between group relative overflow-hidden active:scale-[0.98]"
                             >
                               {/* Barra superior de acento con el color original */}
                               <div 
@@ -2602,18 +2602,31 @@ export default function LinkNestApp() {
                                 style={{ backgroundColor: cat.color }}
                               />
 
-                              {/* Fila principal centrada: Ícono + Nombre */}
-                              <div className="flex items-center justify-center gap-2 pt-0.5 min-w-0 w-full text-center">
+                              {/* Fila superior: Ícono + Contador de links */}
+                              <div className="flex items-center justify-between gap-1.5 pt-0.5 mb-2">
                                 <div 
                                   style={{ 
                                     backgroundColor: `${cat.color}25`, 
                                     color: cat.color 
                                   }}
-                                  className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform"
+                                  className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform"
                                 >
                                   <DynamicIcon name={cat.iconName} size={15} />
                                 </div>
 
+                                <span 
+                                  style={{ 
+                                    color: cat.color, 
+                                    backgroundColor: `${cat.color}20` 
+                                  }}
+                                  className="text-[10px] font-bold px-1.5 py-0.5 rounded-md shrink-0"
+                                >
+                                  {totalLinks} {totalLinks === 1 ? 'link' : 'links'}
+                                </span>
+                              </div>
+
+                              {/* Título de la categoría centrado */}
+                              <div className="w-full text-center py-1">
                                 <h3 
                                   className="font-bold text-gray-900 dark:text-gray-100 text-xs sm:text-sm leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate text-center"
                                   title={cat.name}
