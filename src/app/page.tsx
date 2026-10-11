@@ -1655,8 +1655,8 @@ export default function LinkNestApp() {
           {/* Add New Link Bar (Solo visible en pantalla principal / inicio, no en subcategorías) */}
           {activeCategory === null && (
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200/90 dark:border-gray-700/80 p-3 sm:p-4 mb-6 transition-all">
-            <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3">
-              <div className="flex-1 relative">
+            <div className="flex flex-row items-center gap-2 sm:gap-3">
+              <div className="flex-1 min-w-0 relative">
                 <LinkIcon className={`absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors ${newLinkUrl.trim() ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'}`} size={18} />
                 <input 
                   type="text" 
@@ -1664,16 +1664,16 @@ export default function LinkNestApp() {
                   onChange={(e) => setNewLinkUrl(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && saveNewLink()}
                   placeholder="Pega un enlace aquí para guardarlo rápidamente (ej. https://...)..." 
-                  className={`w-full pl-10 ${newLinkUrl ? 'pr-10' : 'pr-4'} py-3 bg-gray-50 dark:bg-gray-900/70 border border-gray-200 dark:border-gray-700/80 rounded-xl text-sm text-gray-900 dark:text-white font-medium placeholder-gray-400 dark:placeholder-gray-500 focus:border-blue-500 dark:focus:border-blue-400 focus:bg-white dark:focus:bg-gray-900 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30 outline-none transition-all`}
+                  className={`w-full pl-10 ${newLinkUrl ? 'pr-9' : 'pr-3'} py-2.5 sm:py-3 bg-gray-50 dark:bg-gray-900/70 border border-gray-200 dark:border-gray-700/80 rounded-xl text-xs sm:text-sm text-gray-900 dark:text-white font-medium placeholder-gray-400 dark:placeholder-gray-500 focus:border-blue-500 dark:focus:border-blue-400 focus:bg-white dark:focus:bg-gray-900 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30 outline-none transition-all`}
                 />
                 {newLinkUrl && (
                   <button
                     type="button"
                     onClick={() => setNewLinkUrl('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-full transition-colors"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-full transition-colors"
                     title="Limpiar enlace"
                   >
-                    <X size={16} />
+                    <X size={15} />
                   </button>
                 )}
               </div>
@@ -1681,13 +1681,13 @@ export default function LinkNestApp() {
                 type="button"
                 disabled={!newLinkUrl.trim()}
                 onClick={saveNewLink}
-                className={`px-5 sm:px-7 py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-sm shrink-0 ${
+                className={`px-3.5 sm:px-6 py-2.5 sm:py-3 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 sm:gap-2 shadow-sm shrink-0 whitespace-nowrap ${
                   newLinkUrl.trim()
                     ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white cursor-pointer hover:shadow-md active:scale-[0.98]'
                     : 'bg-gray-100 dark:bg-gray-700/60 text-gray-400 dark:text-gray-500 border border-gray-200 dark:border-gray-700 cursor-not-allowed opacity-70'
                 }`}
               >
-                <Plus size={18} strokeWidth={2.5} />
+                <Plus size={16} strokeWidth={2.5} />
                 <span>Guardar Enlace</span>
               </button>
             </div>
