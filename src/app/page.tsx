@@ -2602,8 +2602,8 @@ export default function LinkNestApp() {
                                 style={{ backgroundColor: cat.color }}
                               />
 
-                              {/* Fila principal en una sola línea compacta: Ícono + Nombre + Contador */}
-                              <div className="flex items-center gap-2 pt-0.5 min-w-0">
+                              {/* Fila principal centrada: Ícono + Nombre */}
+                              <div className="flex items-center justify-center gap-2 pt-0.5 min-w-0 w-full text-center">
                                 <div 
                                   style={{ 
                                     backgroundColor: `${cat.color}25`, 
@@ -2614,19 +2614,12 @@ export default function LinkNestApp() {
                                   <DynamicIcon name={cat.iconName} size={15} />
                                 </div>
 
-                                <div className="min-w-0 flex-1">
-                                  <h3 
-                                    className="font-bold text-gray-900 dark:text-gray-100 text-xs sm:text-sm leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate"
-                                    title={cat.name}
-                                  >
-                                    {cat.name}
-                                  </h3>
-                                  <span className="text-[10px] text-gray-500 dark:text-gray-400 font-medium leading-none block truncate">
-                                    {catSubCats.length > 0 ? `${catSubCats.length} sub` : 'directo'} • {totalLinks} {totalLinks === 1 ? 'link' : 'links'}
-                                  </span>
-                                </div>
-
-                                <ChevronRight size={13} className="text-gray-400 group-hover:text-blue-500 group-hover:translate-x-0.5 transition-all shrink-0 opacity-60" />
+                                <h3 
+                                  className="font-bold text-gray-900 dark:text-gray-100 text-xs sm:text-sm leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate text-center"
+                                  title={cat.name}
+                                >
+                                  {cat.name}
+                                </h3>
                               </div>
                             </div>
                           );
