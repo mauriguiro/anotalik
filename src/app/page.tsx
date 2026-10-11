@@ -769,7 +769,7 @@ export default function LinkNestApp() {
     return (
       <div 
         key={link.id} 
-        className="bg-white dark:bg-gray-800/90 rounded-2xl border border-gray-200/80 dark:border-gray-700/80 p-3.5 sm:p-4 hover:shadow-md hover:border-blue-400/80 dark:hover:border-blue-500/60 transition-all duration-200 group flex flex-col justify-between relative overflow-hidden backdrop-blur-xs"
+        className="bg-white dark:bg-gray-800/90 rounded-xl border border-gray-200/80 dark:border-gray-700/80 px-3 py-2 sm:px-3.5 sm:py-2.5 hover:shadow-sm hover:border-blue-400/80 dark:hover:border-blue-500/60 transition-all duration-150 group flex flex-col justify-between relative overflow-hidden backdrop-blur-xs"
       >
         {/* Indicador de categoría sutil superior */}
         {category && (
@@ -779,22 +779,22 @@ export default function LinkNestApp() {
           />
         )}
 
-        <div className="flex items-start gap-3 sm:gap-3.5">
-          {/* Favicon / Miniatura pulcra */}
-          <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gray-100 dark:bg-gray-700/60 rounded-xl relative overflow-hidden shrink-0 flex items-center justify-center border border-gray-200/50 dark:border-gray-700/50 shadow-2xs">
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          {/* Favicon / Miniatura compacta */}
+          <div className="w-10 h-10 sm:w-11 sm:h-11 bg-gray-100 dark:bg-gray-700/60 rounded-lg relative overflow-hidden shrink-0 flex items-center justify-center border border-gray-200/50 dark:border-gray-700/50 shadow-2xs">
             {/* Fallback de fondo */}
             <div className="absolute inset-0 flex items-center justify-center bg-gray-50 dark:bg-gray-800 z-0">
               {(() => {
                 const lUrl = link.url.toLowerCase();
-                if (lUrl.includes('youtube.') || lUrl.includes('youtu.be')) return <LucideIcons.Video size={20} className="text-red-500 opacity-70" />;
-                if (lUrl.includes('instagram.')) return <LucideIcons.Camera size={20} className="text-pink-500 opacity-70" />;
-                if (lUrl.includes('facebook.') || lUrl.includes('fb.')) return <LucideIcons.Users size={20} className="text-blue-600 opacity-70" />;
-                if (lUrl.includes('twitter.') || lUrl.includes('x.com')) return <LucideIcons.MessageCircle size={20} className="text-gray-600 dark:text-gray-300 opacity-70" />;
-                if (lUrl.includes('linkedin.')) return <LucideIcons.Briefcase size={20} className="text-blue-700 opacity-70" />;
-                if (lUrl.includes('github.')) return <LucideIcons.Code size={20} className="text-gray-800 dark:text-gray-200 opacity-70" />;
-                if (lUrl.includes('tiktok.')) return <LucideIcons.Music size={20} className="text-gray-900 dark:text-gray-100 opacity-70" />;
-                if (lUrl.includes('twitch.')) return <LucideIcons.Tv size={20} className="text-purple-500 opacity-70" />;
-                return <LucideIcons.Globe size={20} className="text-blue-500 opacity-60" />;
+                if (lUrl.includes('youtube.') || lUrl.includes('youtu.be')) return <LucideIcons.Video size={16} className="text-red-500 opacity-70" />;
+                if (lUrl.includes('instagram.')) return <LucideIcons.Camera size={16} className="text-pink-500 opacity-70" />;
+                if (lUrl.includes('facebook.') || lUrl.includes('fb.')) return <LucideIcons.Users size={16} className="text-blue-600 opacity-70" />;
+                if (lUrl.includes('twitter.') || lUrl.includes('x.com')) return <LucideIcons.MessageCircle size={16} className="text-gray-600 dark:text-gray-300 opacity-70" />;
+                if (lUrl.includes('linkedin.')) return <LucideIcons.Briefcase size={16} className="text-blue-700 opacity-70" />;
+                if (lUrl.includes('github.')) return <LucideIcons.Code size={16} className="text-gray-800 dark:text-gray-200 opacity-70" />;
+                if (lUrl.includes('tiktok.')) return <LucideIcons.Music size={16} className="text-gray-900 dark:text-gray-100 opacity-70" />;
+                if (lUrl.includes('twitch.')) return <LucideIcons.Tv size={16} className="text-purple-500 opacity-70" />;
+                return <LucideIcons.Globe size={16} className="text-blue-500 opacity-60" />;
               })()}
             </div>
 
@@ -822,19 +822,19 @@ export default function LinkNestApp() {
           
           {/* Información Principal del Enlace */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-1.5 mb-0.5">
               {category && (
                 <span 
                   style={{ backgroundColor: `${category.color}15`, color: category.color }}
-                  className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md truncate max-w-[140px]"
+                  className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.2 rounded truncate max-w-[120px]"
                 >
-                  <DynamicIcon name={category.iconName} size={11} />
+                  <DynamicIcon name={category.iconName} size={10} />
                   <span className="truncate">{category.name}</span>
                 </span>
               )}
             </div>
 
-            <h3 className="font-bold text-gray-900 dark:text-gray-100 text-sm sm:text-base leading-snug line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" title={link.title}>
+            <h3 className="font-bold text-gray-900 dark:text-gray-100 text-xs sm:text-sm leading-snug line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" title={link.title}>
               {link.title}
             </h3>
 
@@ -842,24 +842,24 @@ export default function LinkNestApp() {
               href={link.url} 
               target="_blank" 
               rel="noreferrer" 
-              className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline font-mono mt-0.5 max-w-full"
+              className="inline-flex items-center gap-1 text-[11px] text-blue-600 dark:text-blue-400 hover:underline font-mono mt-0.5 max-w-full"
               title={link.url}
             >
               <span className="truncate">{link.url.replace(/^https?:\/\/(www\.)?/, '')}</span>
-              <ExternalLink size={11} className="shrink-0 opacity-70" />
+              <ExternalLink size={10} className="shrink-0 opacity-70" />
             </a>
 
             {link.description ? (
-              <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mt-1.5 leading-relaxed">
+              <p className="text-[11px] text-gray-500 dark:text-gray-400 line-clamp-1 mt-0.5 leading-tight">
                 {link.description}
               </p>
             ) : null}
 
             {/* Etiquetas / Tags */}
             {link.tags && link.tags.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-2">
+              <div className="flex flex-wrap gap-1 mt-1">
                 {link.tags.map((tag: string, i: number) => (
-                  <span key={i} className="inline-flex items-center px-1.5 py-0.2 rounded-md text-[10px] font-medium bg-gray-100 dark:bg-gray-700/60 text-gray-600 dark:text-gray-300">
+                  <span key={i} className="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-medium bg-gray-100 dark:bg-gray-700/60 text-gray-600 dark:text-gray-300">
                     #{tag}
                   </span>
                 ))}
@@ -2400,42 +2400,7 @@ export default function LinkNestApp() {
                           </div>
                         ) : (
                           /* RECIÉN SE MUESTRAN LOS LINKS SELECCIONADOS */
-                          <div className="space-y-4 pt-2">
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-200 dark:border-gray-800">
-                              <div className="flex items-center gap-2.5">
-                                <div 
-                                  style={{ backgroundColor: `${activeTargetColor}20`, color: activeTargetColor }}
-                                  className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-2xs"
-                                >
-                                  <DynamicIcon name={activeTargetIcon} size={16} />
-                                </div>
-                                <div>
-                                  <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                                    Enlaces en {activeTargetTitle}
-                                  </h3>
-                                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                                    {displayLinks.length} {displayLinks.length === 1 ? 'enlace guardado' : 'enlaces guardados'}
-                                  </p>
-                                </div>
-                              </div>
-
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setEditingLink(null);
-                                  setEditLinkUrl('');
-                                  setEditLinkTitle('');
-                                  setEditLinkDesc('');
-                                  setEditLinkCat(activeTargetCatId);
-                                  setEditLinkTags('');
-                                  setIsLinkModalOpen(true);
-                                }}
-                                className="px-3.5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all shadow-xs flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
-                              >
-                                <Plus size={14} strokeWidth={2.5} />
-                                <span>Añadir enlace en {activeTargetTitle}</span>
-                              </button>
-                            </div>
+                          <div className="space-y-3 pt-1">
 
                             {displayLinks.length === 0 ? (
                               <div className="py-12 text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 p-8 shadow-xs">
