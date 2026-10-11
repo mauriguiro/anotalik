@@ -32,6 +32,7 @@ import {
   User as UserIcon,
   CheckCircle2
 } from 'lucide-react';
+import jsPDF from 'jspdf';
 
 import { auth, db } from '../lib/firebase';
 import { 
@@ -542,25 +543,261 @@ export default function LinkNestApp() {
     return text;
   };
 
-  const copyReportToClipboard = () => {
-    const text = generateReportText();
-    navigator.clipboard.writeText(text);
-    alert('¡Reporte copiado al portapapeles con éxito!');
+  const generateReportPDFBlob = (): { blob: Blob; doc: jsPDF } => {
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 14;
+    const contentWidth = pageWidth - margin * 2;
+    let y = 16;
+
+    const checkPageBreak = (neededHeight: number) => {
+      if (y + neededHeight > pageHeight - 16) {
+        doc.addPage();
+        y = 16;
+        return true;
+      }
+      return false;
+    };
+
+    // --- ENCABEZADO ELEGANTE ---
+    // Barra superior decorativa
+    doc.setFillColor(37, 99, 235); // Blue 600
+    doc.rect(margin, y, contentWidth, 2.5, 'F');
+    y += 7;
+
+    // Título y Subtítulo
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(18);
+    doc.setTextColor(17, 24, 39); // Gray 900
+    doc.text('AnotaLink - Reporte de Enlaces', margin, y);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(107, 114, 128); // Gray 500
+    const dateStr = `Generado el: ${new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}`;
+    doc.text(dateStr, pageWidth - margin - doc.getTextWidth(dateStr), y - 1);
+
+    y += 5;
+    doc.setFontSize(9);
+    doc.setTextColor(75, 85, 99);
+    const filterInfo = selectedReportCats.length === 0 
+      ? 'Todas las categorías' 
+      : `${selectedReportCats.length} categorías seleccionadas`;
+    doc.text(`Filtro: ${filterInfo}  |  Total enlaces: ${links.length}  |  Favoritos: ${links.filter(l => l.isFavorite).length}`, margin, y);
+
+    y += 4;
+    doc.setDrawColor(229, 231, 235); // Gray 200
+    doc.setLineWidth(0.4);
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 7;
+
+    const rootCats = selectedReportCats.length === 0
+      ? categories.filter(c => c.parentId === null)
+      : categories.filter(c => c.parentId === null && selectedReportCats.includes(c.id));
+
+    if (rootCats.length === 0) {
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(11);
+      doc.setTextColor(156, 163, 175);
+      doc.text('No hay enlaces ni categorías que coincidan con la selección.', margin, y + 10);
+    }
+
+    rootCats.forEach((cat) => {
+      const directLinks = links.filter(l => l.categoryId === cat.id);
+      const subCats = categories.filter(c => c.parentId === cat.id);
+
+      checkPageBreak(18);
+
+      // Cabecera de Categoría Principal
+      // Convertir color HEX de la categoría a RGB
+      let r = 59, g = 130, b = 246;
+      if (cat.color && /^#[0-9A-F]{6}$/i.test(cat.color)) {
+        r = parseInt(cat.color.slice(1, 3), 16);
+        g = parseInt(cat.color.slice(3, 5), 16);
+        b = parseInt(cat.color.slice(5, 7), 16);
+      }
+
+      // Caja de fondo sutil para la categoría principal
+      doc.setFillColor(248, 250, 252); // Slate 50
+      doc.roundedRect(margin, y, contentWidth, 8.5, 1.5, 1.5, 'F');
+      
+      // Franja izquierda del color de la categoría
+      doc.setFillColor(r, g, b);
+      doc.rect(margin, y, 2.5, 8.5, 'F');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(15, 23, 42); // Slate 900
+      doc.text(cat.name.toUpperCase(), margin + 5, y + 5.8);
+
+      const totalLinksInCat = directLinks.length + subCats.reduce((acc, sc) => acc + links.filter(l => l.categoryId === sc.id).length, 0);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139);
+      const subInfo = `${totalLinksInCat} enlace(s)  -  ${subCats.length} subcategoría(s)`;
+      doc.text(subInfo, pageWidth - margin - doc.getTextWidth(subInfo) - 3, y + 5.8);
+
+      y += 12;
+
+      // Enlaces Directos de la Categoría Principal
+      if (directLinks.length > 0) {
+        directLinks.forEach(link => {
+          checkPageBreak(12);
+
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(9.5);
+          doc.setTextColor(30, 41, 59);
+          
+          const starIcon = link.isFavorite ? ' [*]' : '';
+          const titleText = `${link.title}${starIcon}`;
+          const splitTitle = doc.splitTextToSize(titleText, contentWidth - 10);
+          doc.text(splitTitle, margin + 4, y);
+          y += (splitTitle.length * 4);
+
+          // URL en color azul
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8);
+          doc.setTextColor(37, 99, 235);
+          const splitUrl = doc.splitTextToSize(link.url || '', contentWidth - 10);
+          doc.text(splitUrl, margin + 4, y);
+          y += (splitUrl.length * 3.5);
+
+          // Descripción si existe
+          if (link.description) {
+            doc.setFont('helvetica', 'italic');
+            doc.setFontSize(7.5);
+            doc.setTextColor(100, 116, 139);
+            const splitDesc = doc.splitTextToSize(`Nota: ${link.description}`, contentWidth - 10);
+            doc.text(splitDesc, margin + 4, y);
+            y += (splitDesc.length * 3.2);
+          }
+
+          y += 2.5;
+        });
+      }
+
+      // Subcategorías
+      subCats.forEach(sub => {
+        const subLinks = links.filter(l => l.categoryId === sub.id);
+        checkPageBreak(14);
+
+        // Barra de Subcategoría
+        doc.setFillColor(241, 245, 249); // Slate 100
+        doc.roundedRect(margin + 3, y, contentWidth - 3, 6.5, 1, 1, 'F');
+        
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        doc.setTextColor(51, 65, 85);
+        doc.text(`> ${sub.name}`, margin + 6, y + 4.5);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(100, 116, 139);
+        const subCountStr = `(${subLinks.length} enlaces)`;
+        doc.text(subCountStr, pageWidth - margin - doc.getTextWidth(subCountStr) - 3, y + 4.5);
+
+        y += 9.5;
+
+        if (subLinks.length === 0) {
+          doc.setFont('helvetica', 'italic');
+          doc.setFontSize(7.5);
+          doc.setTextColor(148, 163, 184);
+          doc.text('Sin enlaces en esta subcategoría.', margin + 8, y);
+          y += 5;
+        } else {
+          subLinks.forEach(link => {
+            checkPageBreak(12);
+
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(9);
+            doc.setTextColor(30, 41, 59);
+
+            const starIcon = link.isFavorite ? ' [*]' : '';
+            const titleText = `- ${link.title}${starIcon}`;
+            const splitTitle = doc.splitTextToSize(titleText, contentWidth - 12);
+            doc.text(splitTitle, margin + 7, y);
+            y += (splitTitle.length * 3.8);
+
+            // URL
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            doc.setTextColor(37, 99, 235);
+            const splitUrl = doc.splitTextToSize(link.url || '', contentWidth - 12);
+            doc.text(splitUrl, margin + 7, y);
+            y += (splitUrl.length * 3.5);
+
+            if (link.description) {
+              doc.setFont('helvetica', 'italic');
+              doc.setFontSize(7.5);
+              doc.setTextColor(100, 116, 139);
+              const splitDesc = doc.splitTextToSize(`Nota: ${link.description}`, contentWidth - 12);
+              doc.text(splitDesc, margin + 7, y);
+              y += (splitDesc.length * 3.2);
+            }
+
+            y += 2.5;
+          });
+        }
+      });
+
+      y += 5;
+    });
+
+    // Pie de página con numeración y firma CAELUM en todas las páginas
+    const totalPages = doc.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setDrawColor(229, 231, 235);
+      doc.setLineWidth(0.3);
+      doc.line(margin, pageHeight - 11, pageWidth - margin, pageHeight - 11);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(148, 163, 184);
+      doc.text('By CAELUM. Bussines group. Software / Labs', margin, pageHeight - 7);
+
+      const pageStr = `Página ${i} de ${totalPages}`;
+      doc.text(pageStr, pageWidth - margin - doc.getTextWidth(pageStr), pageHeight - 7);
+    }
+
+    const blob = doc.output('blob');
+    return { blob, doc };
   };
 
-  const shareReport = async () => {
-    const text = generateReportText();
-    if (typeof navigator !== 'undefined' && navigator.share) {
-      try {
+  const shareReportPDF = async () => {
+    try {
+      const fileName = `AnotaLink_Reporte_${new Date().toISOString().slice(0, 10)}.pdf`;
+      const { blob, doc } = generateReportPDFBlob();
+      const file = new File([blob], fileName, { type: 'application/pdf' });
+
+      // Si el navegador soporta compartir archivos por navigator.share
+      if (typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
-          title: 'Reporte AnotaLink',
-          text: text,
+          title: 'Reporte AnotaLink en PDF',
+          text: 'Te comparto el reporte organizado de mis enlaces de AnotaLink.',
+          files: [file]
         });
-      } catch {
-        // Cancelado
+      } else if (typeof navigator !== 'undefined' && navigator.share) {
+        // Fallback: Si soporta compartir pero no archivos directos
+        doc.save(fileName);
+        await navigator.share({
+          title: 'Reporte AnotaLink en PDF',
+          text: 'Se descargó el reporte en PDF de AnotaLink para compartir.',
+        });
+      } else {
+        // Fallback directo: Descargar archivo PDF
+        doc.save(fileName);
       }
-    } else {
-      copyReportToClipboard();
+    } catch (err: any) {
+      if (err.name !== 'AbortError') {
+        console.error('Error al compartir PDF:', err);
+      }
     }
   };
 
@@ -1922,36 +2159,26 @@ export default function LinkNestApp() {
                         </div>
                       </div>
 
-                      {/* Botones de acción limpios (Descargar CSV, Imprimir / PDF, Compartir) */}
+                      {/* Solo dos opciones: Descargar Excel y Compartir PDF */}
                       <div className="flex items-center gap-2 shrink-0">
                         <button
                           type="button"
                           onClick={exportReportToCSV}
-                          className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-all shadow-2xs hover:shadow-xs flex items-center gap-1.5 cursor-pointer"
-                          title="Descargar archivo CSV compatible con Excel"
+                          className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-all shadow-2xs hover:shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-[0.98]"
+                          title="Descargar archivo compatible con Excel (.csv)"
                         >
-                          <Download size={13} />
+                          <Download size={14} />
                           <span>Descargar Excel</span>
                         </button>
 
                         <button
                           type="button"
-                          onClick={() => window.print()}
-                          className="px-3 py-1.5 rounded-xl bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
-                          title="Imprimir o guardar como PDF"
+                          onClick={shareReportPDF}
+                          className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-all shadow-2xs hover:shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-[0.98]"
+                          title="Compartir reporte PDF en cualquier red o app"
                         >
-                          <Printer size={13} />
-                          <span>Imprimir / PDF</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={shareReport}
-                          className="px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
-                          title="Compartir reporte"
-                        >
-                          <Share2 size={13} />
-                          <span>Compartir</span>
+                          <Share2 size={14} />
+                          <span>Compartir PDF</span>
                         </button>
                       </div>
                     </div>
