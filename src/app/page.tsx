@@ -1657,17 +1657,17 @@ export default function LinkNestApp() {
         <div className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
           
           {/* Add New Link Bar */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200/90 dark:border-gray-700/80 p-3 sm:p-4 mb-6 transition-all">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border-2 border-amber-400/80 dark:border-amber-500/70 p-3 sm:p-4 mb-6 transition-all ring-1 ring-amber-400/20">
             <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3">
               <div className="flex-1 relative">
-                <LinkIcon className={`absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors ${newLinkUrl ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'}`} size={18} />
+                <LinkIcon className={`absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors ${newLinkUrl.trim() ? 'text-amber-500' : 'text-gray-400 dark:text-gray-500'}`} size={18} />
                 <input 
                   type="text" 
                   value={newLinkUrl}
                   onChange={(e) => setNewLinkUrl(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && saveNewLink()}
                   placeholder="Pega un enlace aquí para guardarlo rápidamente (ej. https://...)..." 
-                  className={`w-full pl-10 ${newLinkUrl ? 'pr-10' : 'pr-4'} py-3 bg-gray-50 dark:bg-gray-900/70 border border-gray-200 dark:border-gray-700/80 rounded-xl text-sm text-gray-900 dark:text-white font-medium placeholder-gray-400 dark:placeholder-gray-500 focus:border-blue-500 dark:focus:border-blue-400 focus:bg-white dark:focus:bg-gray-900 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30 outline-none transition-all`}
+                  className={`w-full pl-10 ${newLinkUrl ? 'pr-10' : 'pr-4'} py-3 bg-gray-50 dark:bg-gray-900/70 border border-amber-200/60 dark:border-amber-800/50 rounded-xl text-sm text-gray-900 dark:text-white font-medium placeholder-gray-400 dark:placeholder-gray-500 focus:border-amber-500 dark:focus:border-amber-400 focus:bg-white dark:focus:bg-gray-900 focus:ring-2 focus:ring-amber-400/20 outline-none transition-all`}
                 />
                 {newLinkUrl && (
                   <button
@@ -1681,8 +1681,14 @@ export default function LinkNestApp() {
                 )}
               </div>
               <button 
+                type="button"
+                disabled={!newLinkUrl.trim()}
                 onClick={saveNewLink}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-5 sm:px-7 py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-sm hover:shadow-md cursor-pointer shrink-0"
+                className={`px-5 sm:px-7 py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-sm shrink-0 ${
+                  newLinkUrl.trim()
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white cursor-pointer hover:shadow-md active:scale-[0.98]'
+                    : 'bg-gray-100 dark:bg-gray-700/60 text-gray-400 dark:text-gray-500 border border-gray-200 dark:border-gray-700 cursor-not-allowed opacity-70'
+                }`}
               >
                 <Plus size={18} strokeWidth={2.5} />
                 <span>Guardar Enlace</span>
