@@ -135,7 +135,7 @@ export default function LinkNestApp() {
   const [selectedSubCategory, setSelectedSubCategory] = useState<string | null>(null);
   const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isSidebarCatOpen, setIsSidebarCatOpen] = useState(true);
+  const [isSidebarCatOpen, setIsSidebarCatOpen] = useState(false);
   const [activeSidebarDropdown, setActiveSidebarDropdown] = useState<string | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   const [mainTab, setMainTab] = useState<'categories' | 'favorites' | 'report'>('categories');
@@ -760,24 +760,32 @@ export default function LinkNestApp() {
     return (
       <div 
         key={link.id} 
-        className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200/90 dark:border-gray-700/80 p-3.5 sm:p-4 hover:shadow-md hover:border-blue-400 dark:hover:border-blue-500/50 transition-all duration-200 group flex flex-col justify-between"
+        className="bg-white dark:bg-gray-800/90 rounded-2xl border border-gray-200/80 dark:border-gray-700/80 p-3.5 sm:p-4 hover:shadow-md hover:border-blue-400/80 dark:hover:border-blue-500/60 transition-all duration-200 group flex flex-col justify-between relative overflow-hidden backdrop-blur-xs"
       >
-        <div className="flex items-start gap-3.5">
-          {/* Thumbnail / Favicon */}
-          <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gray-100 dark:bg-gray-700/70 rounded-xl relative overflow-hidden shrink-0 flex items-center justify-center shadow-xs">
+        {/* Indicador de categoría sutil superior */}
+        {category && (
+          <div 
+            className="absolute top-0 left-0 right-0 h-0.5 opacity-80"
+            style={{ backgroundColor: category.color }}
+          />
+        )}
+
+        <div className="flex items-start gap-3 sm:gap-3.5">
+          {/* Favicon / Miniatura pulcra */}
+          <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gray-100 dark:bg-gray-700/60 rounded-xl relative overflow-hidden shrink-0 flex items-center justify-center border border-gray-200/50 dark:border-gray-700/50 shadow-2xs">
             {/* Fallback de fondo */}
             <div className="absolute inset-0 flex items-center justify-center bg-gray-50 dark:bg-gray-800 z-0">
               {(() => {
                 const lUrl = link.url.toLowerCase();
-                if (lUrl.includes('youtube.') || lUrl.includes('youtu.be')) return <LucideIcons.Video size={24} className="text-red-500 opacity-60" />;
-                if (lUrl.includes('instagram.')) return <LucideIcons.Camera size={24} className="text-pink-500 opacity-60" />;
-                if (lUrl.includes('facebook.') || lUrl.includes('fb.')) return <LucideIcons.Users size={24} className="text-blue-600 opacity-60" />;
-                if (lUrl.includes('twitter.') || lUrl.includes('x.com')) return <LucideIcons.MessageCircle size={24} className="text-gray-600 dark:text-gray-300 opacity-60" />;
-                if (lUrl.includes('linkedin.')) return <LucideIcons.Briefcase size={24} className="text-blue-700 opacity-60" />;
-                if (lUrl.includes('github.')) return <LucideIcons.Code size={24} className="text-gray-800 dark:text-gray-200 opacity-60" />;
-                if (lUrl.includes('tiktok.')) return <LucideIcons.Music size={24} className="text-gray-900 dark:text-gray-100 opacity-60" />;
-                if (lUrl.includes('twitch.')) return <LucideIcons.Tv size={24} className="text-purple-500 opacity-60" />;
-                return <LucideIcons.Globe size={24} className="text-blue-500 opacity-50" />;
+                if (lUrl.includes('youtube.') || lUrl.includes('youtu.be')) return <LucideIcons.Video size={20} className="text-red-500 opacity-70" />;
+                if (lUrl.includes('instagram.')) return <LucideIcons.Camera size={20} className="text-pink-500 opacity-70" />;
+                if (lUrl.includes('facebook.') || lUrl.includes('fb.')) return <LucideIcons.Users size={20} className="text-blue-600 opacity-70" />;
+                if (lUrl.includes('twitter.') || lUrl.includes('x.com')) return <LucideIcons.MessageCircle size={20} className="text-gray-600 dark:text-gray-300 opacity-70" />;
+                if (lUrl.includes('linkedin.')) return <LucideIcons.Briefcase size={20} className="text-blue-700 opacity-70" />;
+                if (lUrl.includes('github.')) return <LucideIcons.Code size={20} className="text-gray-800 dark:text-gray-200 opacity-70" />;
+                if (lUrl.includes('tiktok.')) return <LucideIcons.Music size={20} className="text-gray-900 dark:text-gray-100 opacity-70" />;
+                if (lUrl.includes('twitch.')) return <LucideIcons.Tv size={20} className="text-purple-500 opacity-70" />;
+                return <LucideIcons.Globe size={20} className="text-blue-500 opacity-60" />;
               })()}
             </div>
 
@@ -801,45 +809,23 @@ export default function LinkNestApp() {
                 }
               }}
             />
-            
-            {category && (
-              <span 
-                className="absolute top-1 right-1 p-1 rounded-md text-white shadow-xs flex items-center z-20"
-                style={{ backgroundColor: category.color }}
-                title={category.name}
-              >
-                <DynamicIcon name={category.iconName} size={11} />
-              </span>
-            )}
-
-            {(() => {
-              const lUrl = link.url.toLowerCase();
-              let icon = null;
-              let bg = '';
-              if (lUrl.includes('youtube.') || lUrl.includes('youtu.be')) { icon = <LucideIcons.Video size={10} />; bg = 'bg-red-500'; }
-              else if (lUrl.includes('instagram.')) { icon = <LucideIcons.Camera size={10} />; bg = 'bg-pink-600'; }
-              else if (lUrl.includes('facebook.') || lUrl.includes('fb.')) { icon = <LucideIcons.Users size={10} />; bg = 'bg-blue-600'; }
-              else if (lUrl.includes('twitter.') || lUrl.includes('x.com')) { icon = <LucideIcons.MessageCircle size={10} />; bg = 'bg-blue-400 dark:bg-gray-800'; }
-              else if (lUrl.includes('linkedin.')) { icon = <LucideIcons.Briefcase size={10} />; bg = 'bg-blue-700'; }
-              else if (lUrl.includes('github.')) { icon = <LucideIcons.Code size={10} />; bg = 'bg-gray-900 dark:bg-gray-700'; }
-              else if (lUrl.includes('tiktok.')) { icon = <LucideIcons.Music size={10} />; bg = 'bg-black dark:bg-gray-800'; }
-              else if (lUrl.includes('twitch.')) { icon = <LucideIcons.Tv size={10} />; bg = 'bg-purple-600'; }
-              
-              if (!icon) return null;
-              return (
-                <span 
-                  className={`absolute bottom-1 left-1 p-0.5 rounded-full text-white shadow-xs flex items-center justify-center z-20 ${bg}`}
-                  title="Red de origen"
-                >
-                  {icon}
-                </span>
-              );
-            })()}
           </div>
           
-          {/* Info */}
+          {/* Información Principal del Enlace */}
           <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-gray-900 dark:text-gray-100 text-sm sm:text-base leading-snug line-clamp-1 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" title={link.title}>
+            <div className="flex items-center gap-2 mb-1">
+              {category && (
+                <span 
+                  style={{ backgroundColor: `${category.color}15`, color: category.color }}
+                  className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md truncate max-w-[140px]"
+                >
+                  <DynamicIcon name={category.iconName} size={11} />
+                  <span className="truncate">{category.name}</span>
+                </span>
+              )}
+            </div>
+
+            <h3 className="font-bold text-gray-900 dark:text-gray-100 text-sm sm:text-base leading-snug line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" title={link.title}>
               {link.title}
             </h3>
 
@@ -847,51 +833,51 @@ export default function LinkNestApp() {
               href={link.url} 
               target="_blank" 
               rel="noreferrer" 
-              className="inline-flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium hover:underline mt-1 max-w-full"
+              className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline font-mono mt-0.5 max-w-full"
               title={link.url}
             >
               <span className="truncate">{link.url.replace(/^https?:\/\/(www\.)?/, '')}</span>
-              <ExternalLink size={12} className="shrink-0 opacity-70" />
+              <ExternalLink size={11} className="shrink-0 opacity-70" />
             </a>
 
             {link.description ? (
-              <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 mt-1.5 leading-relaxed">
+              <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mt-1.5 leading-relaxed">
                 {link.description}
               </p>
             ) : null}
 
-            {/* Tags */}
+            {/* Etiquetas / Tags */}
             {link.tags && link.tags.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-2.5">
+              <div className="flex flex-wrap gap-1 mt-2">
                 {link.tags.map((tag: string, i: number) => (
-                  <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-gray-100 dark:bg-gray-700/70 text-gray-600 dark:text-gray-300 border border-gray-200/60 dark:border-gray-600/40">
-                    <Hash size={9} className="mr-0.5 opacity-50"/> {tag}
+                  <span key={i} className="inline-flex items-center px-1.5 py-0.2 rounded-md text-[10px] font-medium bg-gray-100 dark:bg-gray-700/60 text-gray-600 dark:text-gray-300">
+                    #{tag}
                   </span>
                 ))}
               </div>
             )}
           </div>
           
-          {/* Action Buttons Column */}
-          <div className="flex flex-col items-center gap-1 shrink-0 pt-0.5">
+          {/* Columna de Acciones Delicadas */}
+          <div className="flex flex-col items-center gap-1 shrink-0">
             {/* Favorito */}
             <button 
               type="button"
               onClick={(e) => toggleFavoriteLink(link, e)}
               className={`p-1.5 rounded-lg transition-all ${
                 link.isFavorite 
-                  ? 'text-amber-500 bg-amber-50 dark:bg-amber-900/30 hover:bg-amber-100' 
+                  ? 'text-amber-500 bg-amber-50 dark:bg-amber-900/30' 
                   : 'text-gray-300 dark:text-gray-600 hover:text-amber-500 hover:bg-gray-100 dark:hover:bg-gray-700'
               }`}
-              title={link.isFavorite ? "Quitar de favoritos" : "Marcar como favorito"}
+              title={link.isFavorite ? "Quitar de favoritos" : "Marcar favorito"}
             >
               <Star 
-                size={16} 
+                size={15} 
                 className={link.isFavorite ? "fill-amber-400 text-amber-500" : ""} 
               />
             </button>
 
-            {/* Copiar enlace con feedback visual */}
+            {/* Copiar enlace */}
             <button 
               type="button"
               onClick={() => copyLinkToClipboard(link.url, link.id)}
@@ -902,7 +888,7 @@ export default function LinkNestApp() {
               }`}
               title={isCopied ? "¡Enlace copiado!" : "Copiar enlace"}
             >
-              {isCopied ? <Check size={16} className="text-emerald-500" /> : <Copy size={15} />}
+              {isCopied ? <Check size={15} className="text-emerald-500" /> : <Copy size={14} />}
             </button>
 
             {/* Menú de 3 puntos */}
@@ -913,7 +899,7 @@ export default function LinkNestApp() {
                 className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 title="Más opciones"
               >
-                <MoreVertical size={16} />
+                <MoreVertical size={15} />
               </button>
               
               {activeLinkDropdown === link.id && (
@@ -922,36 +908,36 @@ export default function LinkNestApp() {
                     className="fixed inset-0 z-40" 
                     onClick={() => setActiveLinkDropdown(null)} 
                   />
-                  <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-50 py-1.5 overflow-hidden">
+                  <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-50 py-1.5 overflow-hidden text-xs">
                     <button 
                       type="button"
-                      className="w-full text-left px-3.5 py-2 text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 flex items-center gap-2.5 transition-colors"
+                      className="w-full text-left px-3.5 py-2 font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 flex items-center gap-2.5 transition-colors"
                       onClick={(e) => { setActiveLinkDropdown(null); toggleFavoriteLink(link, e); }}
                     >
-                      <Star size={14} className={link.isFavorite ? "fill-amber-400 text-amber-500" : "text-amber-500"} />
+                      <Star size={13} className={link.isFavorite ? "fill-amber-400 text-amber-500" : "text-amber-500"} />
                       {link.isFavorite ? 'Quitar favorito' : 'Marcar favorito'}
                     </button>
                     <button 
                       type="button"
-                      className="w-full text-left px-3.5 py-2 text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 flex items-center gap-2.5 transition-colors"
+                      className="w-full text-left px-3.5 py-2 font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 flex items-center gap-2.5 transition-colors"
                       onClick={() => { setActiveLinkDropdown(null); openEditLinkModal(link); }}
                     >
-                      <Edit2 size={14} className="text-blue-500" /> Editar enlace
+                      <Edit2 size={13} className="text-blue-500" /> Editar enlace
                     </button>
                     <button 
                       type="button"
-                      className="w-full text-left px-3.5 py-2 text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 flex items-center gap-2.5 transition-colors"
+                      className="w-full text-left px-3.5 py-2 font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 flex items-center gap-2.5 transition-colors"
                       onClick={() => { setActiveLinkDropdown(null); openMoveLinkModal(link); }}
                     >
-                      <Folder size={14} className="text-indigo-500" /> Mover categoría
+                      <Folder size={13} className="text-indigo-500" /> Mover categoría
                     </button>
                     <div className="my-1 border-t border-gray-100 dark:border-gray-700/60" />
                     <button 
                       type="button"
-                      className="w-full text-left px-3.5 py-2 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2.5 transition-colors"
+                      className="w-full text-left px-3.5 py-2 font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2.5 transition-colors"
                       onClick={() => { setActiveLinkDropdown(null); deleteLink(link.id); }}
                     >
-                      <Trash2 size={14} /> Eliminar
+                      <Trash2 size={13} /> Eliminar
                     </button>
                   </div>
                 </>
@@ -964,7 +950,10 @@ export default function LinkNestApp() {
   };
 
   const renderSidebarCategoriesMenu = () => {
-    const rootCats = categories.filter(c => c.parentId === null);
+    const rootCats = categories
+      .filter(c => c.parentId === null)
+      .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+
     if (rootCats.length === 0) {
       return (
         <div className="py-6 px-3 text-center bg-gray-50 dark:bg-gray-800/40 rounded-xl border border-dashed border-gray-200 dark:border-gray-800">
@@ -984,8 +973,10 @@ export default function LinkNestApp() {
     return (
       <div className="space-y-1 py-1">
         {rootCats.map(cat => {
-          const subCats = categories.filter(c => c.parentId === cat.id);
-          const isExpanded = expandedCategories[cat.id];
+          const subCats = categories
+            .filter(c => c.parentId === cat.id)
+            .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+          const isExpanded = !!expandedCategories[cat.id];
           const isCatSelected = activeCategory === cat.id && !selectedSubCategory;
 
           return (
@@ -2364,103 +2355,88 @@ export default function LinkNestApp() {
                           </div>
                         </div>
 
-                        {/* DESPLIEGUE DE SUBCATEGORÍAS DELICADAS Y MINIMALISTAS */}
+                        {/* DESPLIEGUE ELEGANTE Y PROLIJO DE SUBCATEGORÍAS */}
                         {subCats.length > 0 && (
-                          <div className="space-y-2.5">
+                          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl border border-gray-200/80 dark:border-gray-700/80 p-3.5 sm:p-4 shadow-2xs space-y-3">
                             <div className="flex items-center justify-between">
-                              <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                              <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                                <Folder size={14} className="text-blue-500" />
                                 Subcategorías
                               </span>
-                              <span className="text-[11px] text-gray-400">
-                                Selecciona una para ver sus links
+                              <span className="text-[11px] text-gray-400 font-medium">
+                                {selectedSubCategory ? 'Toca otra para cambiar' : 'Elige una subcategoría para ver sus enlaces'}
                               </span>
                             </div>
 
-                            {/* Cuadrícula compacta de tarjetas de subcategorías */}
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5">
-                              {subCats.map(sub => {
-                                const isSelected = selectedSubCategory === sub.id;
-                                const subLinksCount = links.filter(l => l.categoryId === sub.id).length;
+                            {/* Píldoras / Botones de Subcategorías Elegantes y Ordenadas Alfabéticamente */}
+                            <div className="flex flex-wrap gap-2 pt-0.5">
+                              {/* Opción General / Raíz si tiene enlaces directos */}
+                              {directLinks.length > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedSubCategory(selectedSubCategory === '__parent_direct__' ? null : '__parent_direct__')}
+                                  className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer border ${
+                                    selectedSubCategory === '__parent_direct__'
+                                      ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                                      : 'bg-gray-50 dark:bg-gray-750 text-gray-700 dark:text-gray-200 border-gray-200/80 dark:border-gray-700 hover:border-blue-400'
+                                  }`}
+                                >
+                                  <Folder size={13} className={selectedSubCategory === '__parent_direct__' ? 'text-white' : 'text-gray-500'} />
+                                  <span>General ({activeCatObj?.name})</span>
+                                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                                    selectedSubCategory === '__parent_direct__'
+                                      ? 'bg-blue-700 text-white'
+                                      : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                                  }`}>
+                                    {directLinks.length}
+                                  </span>
+                                </button>
+                              )}
 
-                                return (
-                                  <div
-                                    key={sub.id}
-                                    onClick={() => setSelectedSubCategory(sub.id)}
-                                    style={{
-                                      borderColor: isSelected ? sub.color : undefined,
-                                      backgroundColor: isSelected ? `${sub.color}10` : undefined
-                                    }}
-                                    className={`rounded-xl border p-2.5 cursor-pointer transition-all duration-150 flex flex-col justify-between group ${
-                                      isSelected
-                                        ? 'shadow-xs border-2'
-                                        : 'bg-white dark:bg-gray-800 border-gray-200/70 dark:border-gray-750 hover:border-blue-300 dark:hover:border-blue-700'
-                                    }`}
-                                  >
-                                    <div className="flex items-center justify-between mb-2">
+                              {subCats
+                                .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
+                                .map(sub => {
+                                  const isSelected = selectedSubCategory === sub.id;
+                                  const subLinksCount = links.filter(l => l.categoryId === sub.id).length;
+
+                                  return (
+                                    <button
+                                      key={sub.id}
+                                      type="button"
+                                      onClick={() => setSelectedSubCategory(isSelected ? null : sub.id)}
+                                      style={{
+                                        borderColor: isSelected ? sub.color : `${sub.color}30`,
+                                        backgroundColor: isSelected ? sub.color : `${sub.color}10`,
+                                        color: isSelected ? '#ffffff' : undefined
+                                      }}
+                                      className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer border shadow-2xs hover:scale-[1.02] active:scale-[0.98] ${
+                                        !isSelected ? 'text-gray-800 dark:text-gray-100' : 'shadow-sm'
+                                      }`}
+                                    >
                                       <div 
-                                        style={{ backgroundColor: `${sub.color}18`, color: sub.color }}
-                                        className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-2xs"
+                                        style={{ color: isSelected ? '#ffffff' : sub.color }}
+                                        className="shrink-0"
                                       >
                                         <DynamicIcon name={sub.iconName} size={14} />
                                       </div>
 
-                                      {isSelected ? (
-                                        <span 
-                                          style={{ backgroundColor: sub.color }}
-                                          className="w-4 h-4 rounded-full text-white flex items-center justify-center text-[10px]"
-                                          title="Activo"
-                                        >
-                                          ✓
-                                        </span>
-                                      ) : (
-                                        <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-gray-100 dark:bg-gray-750 text-gray-400">
-                                          {subLinksCount}
-                                        </span>
-                                      )}
-                                    </div>
+                                      <span>{sub.name}</span>
 
-                                    <div>
-                                      <h4 className="text-xs font-semibold text-gray-800 dark:text-gray-200 truncate">
-                                        {sub.name}
-                                      </h4>
-                                    </div>
-                                  </div>
-                                 );
-                              })}
+                                      <span 
+                                        style={{
+                                          backgroundColor: isSelected ? 'rgba(255,255,255,0.25)' : `${sub.color}20`,
+                                          color: isSelected ? '#ffffff' : sub.color
+                                        }}
+                                        className="text-[10px] font-bold px-1.5 py-0.2 rounded-full shrink-0"
+                                      >
+                                        {subLinksCount}
+                                      </span>
+                                    </button>
+                                  );
+                                })}
                             </div>
                           </div>
                         )}
-
-                              {/* Opción adicional para enlaces directos en la categoría padre si existen */}
-                              {directLinks.length > 0 && (
-                                <div
-                                  onClick={() => setSelectedSubCategory('__parent_direct__')}
-                                  className={`rounded-xl border p-2.5 cursor-pointer transition-all duration-150 flex flex-col justify-between group ${
-                                    selectedSubCategory === '__parent_direct__'
-                                      ? 'bg-blue-50/70 dark:bg-blue-900/30 border-blue-500 border-2 shadow-xs'
-                                      : 'bg-white dark:bg-gray-800 border-dashed border-gray-300 dark:border-gray-700 hover:border-blue-400'
-                                  }`}
-                                >
-                                  <div className="flex items-center justify-between mb-2">
-                                    <div className="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center justify-center shrink-0">
-                                      <Folder size={14} />
-                                    </div>
-                                    {selectedSubCategory === '__parent_direct__' && (
-                                      <span className="w-4 h-4 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px]">
-                                        ✓
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div>
-                                    <h4 className="text-xs font-semibold text-gray-800 dark:text-gray-200 truncate">
-                                      General ({activeCatObj?.name})
-                                    </h4>
-                                    <div className="text-[10px] text-gray-400 mt-0.5">
-                                      {directLinks.length} directo{directLinks.length === 1 ? '' : 's'}
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
 
                         {/* SECCIÓN DE ENLACES SELECCIONADOS */}
                         {subCats.length > 0 && selectedSubCategory === null ? (
@@ -2597,57 +2573,72 @@ export default function LinkNestApp() {
                       </button>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-                      {categories.filter(c => c.parentId === null).map(cat => {
-                        const catSubCats = categories.filter(c => c.parentId === cat.id);
-                        const totalLinks = getRecursiveLinkCount(cat.id);
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-3.5">
+                      {categories
+                        .filter(c => c.parentId === null)
+                        .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
+                        .map(cat => {
+                          const catSubCats = categories
+                            .filter(c => c.parentId === cat.id)
+                            .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+                          const totalLinks = getRecursiveLinkCount(cat.id);
 
-                        return (
-                          <div 
-                            key={cat.id}
-                            onClick={() => {
-                              setActiveCategory(cat.id);
-                              setSelectedSubCategory(null);
-                            }}
-                            className="bg-white dark:bg-gray-850 rounded-xl border border-gray-200/70 dark:border-gray-750 p-3 hover:border-blue-400/80 dark:hover:border-blue-500/60 hover:shadow-sm hover:-translate-y-0.5 transition-all duration-150 cursor-pointer flex flex-col justify-between group relative overflow-hidden"
-                          >
-                            {/* Borde sutil superior de acento con color */}
+                          return (
                             <div 
-                              className="absolute top-0 left-0 right-0 h-0.5 transition-all group-hover:h-1 opacity-80"
-                              style={{ backgroundColor: cat.color }}
-                            />
+                              key={cat.id}
+                              onClick={() => {
+                                setActiveCategory(cat.id);
+                                setSelectedSubCategory(null);
+                              }}
+                              style={{
+                                backgroundColor: `${cat.color}08`,
+                                borderColor: `${cat.color}25`
+                              }}
+                              className="rounded-2xl border p-3.5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer flex flex-col justify-between group relative overflow-hidden backdrop-blur-xs"
+                            >
+                              {/* Barra superior muy sutil con el color original */}
+                              <div 
+                                className="absolute top-0 left-0 right-0 h-1 transition-all group-hover:h-1.5 opacity-90"
+                                style={{ backgroundColor: cat.color }}
+                              />
 
-                            <div>
-                              {/* Ícono sutil + Contadores */}
-                              <div className="flex items-center justify-between gap-2 mb-2 pt-0.5">
-                                <div 
-                                  style={{ backgroundColor: `${cat.color}15`, color: cat.color }}
-                                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform"
-                                >
-                                  <DynamicIcon name={cat.iconName} size={16} />
+                              <div>
+                                {/* Fila superior: Ícono sutil con fondo suave + contador */}
+                                <div className="flex items-center justify-between gap-2 mb-2.5 pt-0.5">
+                                  <div 
+                                    style={{ 
+                                      backgroundColor: `${cat.color}18`, 
+                                      color: cat.color 
+                                    }}
+                                    className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform"
+                                  >
+                                    <DynamicIcon name={cat.iconName} size={16} />
+                                  </div>
+
+                                  <span 
+                                    style={{ color: cat.color, backgroundColor: `${cat.color}12` }}
+                                    className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                                  >
+                                    {totalLinks} {totalLinks === 1 ? 'link' : 'links'}
+                                  </span>
                                 </div>
 
-                                <span className="text-[10px] font-medium px-1.5 py-0.2 rounded-md bg-gray-100 dark:bg-gray-750 text-gray-500 dark:text-gray-400">
-                                  {totalLinks} {totalLinks === 1 ? 'link' : 'links'}
-                                </span>
+                                {/* Nombre de la categoría */}
+                                <h3 className="font-bold text-gray-800 dark:text-gray-100 text-xs sm:text-sm leading-tight mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
+                                  {cat.name}
+                                </h3>
                               </div>
 
-                              {/* Nombre de la categoría */}
-                              <h3 className="font-semibold text-gray-800 dark:text-gray-150 text-xs sm:text-sm leading-tight mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
-                                {cat.name}
-                              </h3>
+                              {/* Pie de la tarjeta muy suave */}
+                              <div className="pt-2 mt-2 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] font-medium text-gray-500 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-gray-200 transition-colors">
+                                <span>
+                                  {catSubCats.length > 0 ? `${catSubCats.length} subcat${catSubCats.length > 1 ? 's' : ''}` : 'Directo'}
+                                </span>
+                                <ChevronRight size={13} className="transform group-hover:translate-x-0.5 transition-transform opacity-70" />
+                              </div>
                             </div>
-
-                            {/* Subinfo minimalista */}
-                            <div className="pt-2 mt-2 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-[10px] text-gray-400 dark:text-gray-500 group-hover:text-blue-500 transition-colors">
-                              <span>
-                                {catSubCats.length > 0 ? `${catSubCats.length} subcat${catSubCats.length > 1 ? 's' : ''}` : 'Directo'}
-                              </span>
-                              <ChevronRight size={13} className="transform group-hover:translate-x-0.5 transition-transform opacity-70" />
-                            </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
                     </div>
                   )}
                 </div>
