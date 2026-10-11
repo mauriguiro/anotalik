@@ -139,7 +139,7 @@ export default function LinkNestApp() {
   const [activeSidebarDropdown, setActiveSidebarDropdown] = useState<string | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   const [mainTab, setMainTab] = useState<'categories' | 'favorites' | 'report'>('categories');
-  const [reportFilterCat, setReportFilterCat] = useState<string>('all');
+  const [selectedReportCats, setSelectedReportCats] = useState<string[]>([]);
 
   // User Profile Modal State
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -196,8 +196,6 @@ export default function LinkNestApp() {
   useEffect(() => {
     setIsMounted(true);
     const savedTheme = localStorage.getItem('anotalink_theme');
-    const savedExpanded = localStorage.getItem('anotalink_expanded');
-    if (savedExpanded) setExpandedCategories(JSON.parse(savedExpanded));
     
     if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
       setIsDarkMode(true);
@@ -437,11 +435,9 @@ export default function LinkNestApp() {
     const headers = ['Categoría', 'Subcategoría', 'Título', 'URL', 'Descripción', 'Etiquetas', 'Favorito'];
     const rows: string[][] = [];
 
-    const targetCats = reportFilterCat
-      ? categories.filter(c => c.id === reportFilterCat || c.parentId === reportFilterCat)
-      : categories;
-
-    const rootCats = targetCats.filter(c => c.parentId === null);
+    const rootCats = selectedReportCats.length === 0
+      ? categories.filter(c => c.parentId === null)
+      : categories.filter(c => c.parentId === null && selectedReportCats.includes(c.id));
 
     rootCats.forEach(cat => {
       // Directos
@@ -459,7 +455,7 @@ export default function LinkNestApp() {
       });
 
       // Subcategorías
-      const subCats = targetCats.filter(c => c.parentId === cat.id);
+      const subCats = categories.filter(c => c.parentId === cat.id);
       subCats.forEach(sub => {
         const subLinks = links.filter(l => l.categoryId === sub.id);
         subLinks.forEach(link => {
@@ -477,11 +473,11 @@ export default function LinkNestApp() {
     });
 
     // Sin Categoría si no hay filtro
-    if (!reportFilterCat) {
+    if (selectedReportCats.length === 0) {
       const uncategorizedLinks = links.filter(l => !l.categoryId || !categories.some(c => c.id === l.categoryId));
       uncategorizedLinks.forEach(link => {
         rows.push([
-          'Sin Categoría',
+          'Sin categoría',
           '-',
           link.title || '',
           link.url || '',
@@ -515,9 +511,9 @@ export default function LinkNestApp() {
     text += `Total categorías: ${categories.length} | Total enlaces: ${links.length}\n`;
     text += `===================================================\n\n`;
 
-    const rootCats = reportFilterCat
-      ? categories.filter(c => c.id === reportFilterCat)
-      : categories.filter(c => c.parentId === null);
+    const rootCats = selectedReportCats.length === 0
+      ? categories.filter(c => c.parentId === null)
+      : categories.filter(c => c.parentId === null && selectedReportCats.includes(c.id));
 
     rootCats.forEach(cat => {
       text += `📁 CATEGORÍA: ${cat.name.toUpperCase()}\n`;
@@ -1859,97 +1855,125 @@ export default function LinkNestApp() {
                 /* TAB REPORTE Y PLANILLA */
                 <div className="space-y-6">
                   {/* Encabezado y Barra de Acciones de Reporte */}
-                  <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-200/80 dark:border-gray-700/80 shadow-2xs">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-gray-100 dark:border-gray-700">
-                      <div>
-                        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2.5">
-                          <div className="p-2 bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-300 rounded-xl">
-                            <FileSpreadsheet size={22} />
-                          </div>
-                          <span>Reporte General de Enlaces</span>
-                        </h2>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          Visualiza, comparte y exporta tus enlaces organizados jerárquicamente por categoría y subcategoría con sus colores distintivos.
-                        </p>
+                  <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-5 border border-gray-200/80 dark:border-gray-700/80 shadow-2xs">
+                    {/* Barra de título y botones de acción en una sola fila compacta y limpia */}
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3.5 border-b border-gray-100 dark:border-gray-700/80">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="p-2 bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-300 rounded-xl shrink-0">
+                          <FileSpreadsheet size={20} />
+                        </div>
+                        <div className="min-w-0">
+                          <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-gray-100 truncate">
+                            Reporte General de Enlaces
+                          </h2>
+                          <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
+                            Total {categories.length} categorías • {links.length} enlaces • {links.filter(l => l.isFavorite).length} favoritos
+                          </p>
+                        </div>
                       </div>
 
-                      {/* Botones de Exportar / Compartir */}
-                      <div className="flex flex-wrap items-center gap-2">
+                      {/* Botones de acción limpios (Descargar CSV, Imprimir / PDF, Compartir) */}
+                      <div className="flex items-center gap-2 shrink-0">
                         <button
                           type="button"
                           onClick={exportReportToCSV}
-                          className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-sm hover:shadow flex items-center gap-2 cursor-pointer"
-                          title="Descargar archivo compatible con Excel / Calc"
+                          className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-all shadow-2xs hover:shadow-xs flex items-center gap-1.5 cursor-pointer"
+                          title="Descargar archivo CSV compatible con Excel"
                         >
-                          <Download size={14} />
-                          <span>Descargar Excel (.csv)</span>
+                          <Download size={13} />
+                          <span>Descargar Excel</span>
                         </button>
 
                         <button
                           type="button"
                           onClick={() => window.print()}
-                          className="px-3.5 py-2 rounded-xl bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer"
+                          className="px-3 py-1.5 rounded-xl bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
                           title="Imprimir o guardar como PDF"
                         >
-                          <Printer size={14} />
+                          <Printer size={13} />
                           <span>Imprimir / PDF</span>
                         </button>
 
                         <button
                           type="button"
                           onClick={shareReport}
-                          className="px-3.5 py-2 rounded-xl bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer"
-                          title="Compartir lista o copiar enlace"
+                          className="px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
+                          title="Compartir reporte"
                         >
-                          <Share2 size={14} />
+                          <Share2 size={13} />
                           <span>Compartir</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={copyReportToClipboard}
-                          className="px-3 py-2 rounded-xl bg-gray-100 dark:bg-gray-750 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
-                          title="Copiar reporte al portapapeles"
-                        >
-                          <LucideIcons.Copy size={14} />
-                          <span>Copiar texto</span>
                         </button>
                       </div>
                     </div>
 
-                    {/* Filtros rápidos del reporte */}
-                    <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div className="flex items-center gap-2 text-xs">
-                        <span className="text-gray-500 dark:text-gray-400 font-semibold">Filtrar categoría:</span>
-                        <select
-                          value={reportFilterCat}
-                          onChange={(e) => setReportFilterCat(e.target.value)}
-                          className="px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 text-xs outline-none focus:border-blue-500 font-medium"
-                        >
-                          <option value="all">Todas las categorías ({links.length} enlaces)</option>
-                          {categories.filter(c => c.parentId === null).map(rc => (
-                            <option key={rc.id} value={rc.id}>
-                              {rc.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                    {/* Selector de categorías con Checkboxes en una sola fila fluida */}
+                    <div className="mt-3.5 flex flex-col sm:flex-row sm:items-center gap-2.5">
+                      <span className="text-xs font-semibold text-gray-600 dark:text-gray-300 shrink-0">
+                        Categorías a reportar:
+                      </span>
 
-                      <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 font-medium">
-                        <span>Total categorías: <strong className="text-gray-800 dark:text-gray-200">{categories.length}</strong></span>
-                        <span>•</span>
-                        <span>Total enlaces: <strong className="text-gray-800 dark:text-gray-200">{links.length}</strong></span>
-                        <span>•</span>
-                        <span>Favoritos: <strong className="text-amber-600 dark:text-amber-400">{links.filter(l => l.isFavorite).length}</strong></span>
+                      <div className="flex flex-wrap items-center gap-1.5 flex-1">
+                        {/* Checkbox Todas */}
+                        <label 
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium cursor-pointer transition-all border ${
+                            selectedReportCats.length === 0
+                              ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 font-semibold'
+                              : 'bg-gray-50 dark:bg-gray-800/60 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedReportCats.length === 0}
+                            onChange={() => setSelectedReportCats([])}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-0 cursor-pointer w-3.5 h-3.5"
+                          />
+                          <span>Todas ({links.length})</span>
+                        </label>
+
+                        {/* Checkbox por cada categoría principal */}
+                        {categories
+                          .filter(c => c.parentId === null)
+                          .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
+                          .map(cat => {
+                            const isChecked = selectedReportCats.includes(cat.id);
+                            const catLinkCount = getRecursiveLinkCount(cat.id);
+
+                            return (
+                              <label
+                                key={cat.id}
+                                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium cursor-pointer transition-all border ${
+                                  isChecked
+                                    ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 font-semibold'
+                                    : 'bg-gray-50 dark:bg-gray-800/60 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600'
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSelectedReportCats(prev => [...prev, cat.id]);
+                                    } else {
+                                      const next = selectedReportCats.filter(id => id !== cat.id);
+                                      setSelectedReportCats(next);
+                                    }
+                                  }}
+                                  className="rounded border-gray-300 text-blue-600 focus:ring-0 cursor-pointer w-3.5 h-3.5"
+                                />
+                                <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
+                                <span>{cat.name} ({catLinkCount})</span>
+                              </label>
+                            );
+                          })}
                       </div>
                     </div>
                   </div>
 
                   {/* Planilla Visual Estructurada */}
                   {(() => {
-                    const rootCatsToDisplay = reportFilterCat === 'all'
+                    const rootCatsToDisplay = selectedReportCats.length === 0
                       ? categories.filter(c => c.parentId === null)
-                      : categories.filter(c => c.id === reportFilterCat);
+                      : categories.filter(c => c.parentId === null && selectedReportCats.includes(c.id));
 
                     if (rootCatsToDisplay.length === 0) {
                       return (
