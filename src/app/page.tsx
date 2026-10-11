@@ -2573,14 +2573,14 @@ export default function LinkNestApp() {
                       </button>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-3.5">
-                      {categories
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 sm:gap-3">
+                      {[...categories]
                         .filter(c => c.parentId === null)
-                        .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
+                        .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }))
                         .map(cat => {
-                          const catSubCats = categories
+                          const catSubCats = [...categories]
                             .filter(c => c.parentId === cat.id)
-                            .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+                            .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
                           const totalLinks = getRecursiveLinkCount(cat.id);
 
                           return (
@@ -2591,50 +2591,56 @@ export default function LinkNestApp() {
                                 setSelectedSubCategory(null);
                               }}
                               style={{
-                                backgroundColor: `${cat.color}08`,
-                                borderColor: `${cat.color}25`
+                                backgroundColor: isDarkMode ? `${cat.color}15` : `${cat.color}12`,
+                                borderColor: `${cat.color}35`
                               }}
-                              className="rounded-2xl border p-3.5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer flex flex-col justify-between group relative overflow-hidden backdrop-blur-xs"
+                              className="rounded-xl border p-2.5 sm:p-3 hover:shadow-md hover:-translate-y-0.5 transition-all duration-150 cursor-pointer flex flex-col justify-between group relative overflow-hidden active:scale-[0.98]"
                             >
-                              {/* Barra superior muy sutil con el color original */}
+                              {/* Barra superior de acento con el color original */}
                               <div 
                                 className="absolute top-0 left-0 right-0 h-1 transition-all group-hover:h-1.5 opacity-90"
                                 style={{ backgroundColor: cat.color }}
                               />
 
-                              <div>
-                                {/* Fila superior: Ícono sutil con fondo suave + contador */}
-                                <div className="flex items-center justify-between gap-2 mb-2.5 pt-0.5">
+                              {/* Fila superior compacta: Ícono + Nombre */}
+                              <div className="pt-0.5">
+                                <div className="flex items-center justify-between gap-1.5 mb-1.5">
                                   <div 
                                     style={{ 
-                                      backgroundColor: `${cat.color}18`, 
+                                      backgroundColor: `${cat.color}25`, 
                                       color: cat.color 
                                     }}
-                                    className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform"
+                                    className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform"
                                   >
-                                    <DynamicIcon name={cat.iconName} size={16} />
+                                    <DynamicIcon name={cat.iconName} size={15} />
                                   </div>
 
                                   <span 
-                                    style={{ color: cat.color, backgroundColor: `${cat.color}12` }}
-                                    className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                                    style={{ 
+                                      color: cat.color, 
+                                      backgroundColor: `${cat.color}20` 
+                                    }}
+                                    className="text-[10px] font-bold px-1.5 py-0.2 rounded-md shrink-0"
                                   >
                                     {totalLinks} {totalLinks === 1 ? 'link' : 'links'}
                                   </span>
                                 </div>
 
-                                {/* Nombre de la categoría */}
-                                <h3 className="font-bold text-gray-800 dark:text-gray-100 text-xs sm:text-sm leading-tight mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
+                                {/* Nombre de la categoría optimizado sin espacios de sobra */}
+                                <h3 
+                                  className="font-bold text-gray-900 dark:text-gray-100 text-xs sm:text-sm leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate"
+                                  title={cat.name}
+                                >
                                   {cat.name}
                                 </h3>
                               </div>
 
-                              {/* Pie de la tarjeta muy suave */}
-                              <div className="pt-2 mt-2 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] font-medium text-gray-500 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-gray-200 transition-colors">
-                                <span>
+                              {/* Pie de tarjeta compacto */}
+                              <div className="pt-1.5 mt-2 border-t border-black/5 dark:border-white/10 flex items-center justify-between text-[10px] font-medium text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-100 transition-colors">
+                                <span className="truncate">
                                   {catSubCats.length > 0 ? `${catSubCats.length} subcat${catSubCats.length > 1 ? 's' : ''}` : 'Directo'}
                                 </span>
-                                <ChevronRight size={13} className="transform group-hover:translate-x-0.5 transition-transform opacity-70" />
+                                <ChevronRight size={12} className="transform group-hover:translate-x-0.5 transition-transform opacity-70 shrink-0" />
                               </div>
                             </div>
                           );
