@@ -21,7 +21,16 @@ import {
   Star,
   Check,
   Globe,
-  ExternalLink
+  ExternalLink,
+  FileSpreadsheet,
+  FileText,
+  Share2,
+  Printer,
+  Download,
+  LogOut,
+  AlertTriangle,
+  User as UserIcon,
+  CheckCircle2
 } from 'lucide-react';
 
 import { auth, db } from '../lib/firebase';
@@ -31,6 +40,9 @@ import {
   signOut, 
   onAuthStateChanged,
   sendPasswordResetEmail,
+  updateProfile,
+  updatePassword,
+  updateEmail,
   User
 } from 'firebase/auth';
 import { 
@@ -120,9 +132,27 @@ export default function LinkNestApp() {
   const [links, setLinks] = useState<any[]>(INITIAL_LINKS);
   
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [selectedSubCategory, setSelectedSubCategory] = useState<string | null>(null);
+  const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarCatOpen, setIsSidebarCatOpen] = useState(true);
+  const [activeSidebarDropdown, setActiveSidebarDropdown] = useState<string | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
-  const [mainTab, setMainTab] = useState<'categories' | 'favorites'>('categories');
+  const [mainTab, setMainTab] = useState<'categories' | 'favorites' | 'report'>('categories');
+  const [reportFilterCat, setReportFilterCat] = useState<string>('all');
+
+  // User Profile Modal State
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [userName, setUserName] = useState('');
+  const [userPhoto, setUserPhoto] = useState('');
+  const [userEmail, setUserEmail] = useState('');
+  const [userNewPassword, setUserNewPassword] = useState('');
+  const [userProfileMsg, setUserProfileMsg] = useState('');
+  const [userProfileError, setUserProfileError] = useState('');
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  // Logout Confirmation State
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -177,6 +207,9 @@ export default function LinkNestApp() {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
+        setUserName(currentUser.displayName || '');
+        setUserPhoto(currentUser.photoURL || '');
+        setUserEmail(currentUser.email || '');
         try {
           const catsSnapshot = await getDocs(query(collection(db, 'categories'), where('userId', '==', currentUser.uid)));
           let userCats = catsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -322,7 +355,206 @@ export default function LinkNestApp() {
       setLinks(updatedLinks);
     }
     
-    if (activeCategory === id) setActiveCategory(null);
+    if (activeCategory === id) {
+      setActiveCategory(null);
+      setSelectedSubCategory(null);
+    }
+    if (selectedSubCategory === id) {
+      setSelectedSubCategory(null);
+    }
+  };
+
+  const copyLinkToClipboard = (url: string, id: string) => {
+    navigator.clipboard.writeText(url);
+    setCopiedLinkId(id);
+    setTimeout(() => {
+      setCopiedLinkId(null);
+    }, 2000);
+  };
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!auth.currentUser) return;
+    setIsSavingProfile(true);
+    setUserProfileMsg('');
+    setUserProfileError('');
+
+    try {
+      // 1. Actualizar displayName y photoURL
+      await updateProfile(auth.currentUser, {
+        displayName: userName.trim() || null,
+        photoURL: userPhoto.trim() || null
+      });
+
+      // 2. Si se cambió el correo y es distinto
+      if (userEmail.trim() && userEmail.trim() !== auth.currentUser.email) {
+        await updateEmail(auth.currentUser, userEmail.trim());
+      }
+
+      // 3. Si se ingresó una nueva contraseña
+      if (userNewPassword.trim()) {
+        if (userNewPassword.length < 6) {
+          throw new Error('La contraseña debe tener al menos 6 caracteres.');
+        }
+        await updatePassword(auth.currentUser, userNewPassword);
+        setUserNewPassword('');
+      }
+
+      setUser({ ...auth.currentUser });
+      setUserProfileMsg('¡Perfil actualizado con éxito!');
+    } catch (err: any) {
+      console.error('Error al actualizar perfil:', err);
+      if (err.code === 'auth/requires-recent-login') {
+        setUserProfileError('Por seguridad, para cambiar correo o contraseña debes haber iniciado sesión recientemente. Cierra sesión e ingresa de nuevo.');
+      } else {
+        setUserProfileError(err.message || 'Error al actualizar el perfil.');
+      }
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
+  const handleSendPasswordReset = async () => {
+    if (!user?.email) return;
+    try {
+      await sendPasswordResetEmail(auth, user.email);
+      setUserProfileMsg(`Se ha enviado un correo a ${user.email} con las instrucciones para restablecer tu contraseña.`);
+    } catch (err: any) {
+      setUserProfileError(err.message || 'Error al enviar correo de restablecimiento.');
+    }
+  };
+
+  const exportReportToCSV = () => {
+    const headers = ['Categoría', 'Subcategoría', 'Título', 'URL', 'Descripción', 'Etiquetas', 'Favorito'];
+    const rows: string[][] = [];
+
+    const targetCats = reportFilterCat
+      ? categories.filter(c => c.id === reportFilterCat || c.parentId === reportFilterCat)
+      : categories;
+
+    const rootCats = targetCats.filter(c => c.parentId === null);
+
+    rootCats.forEach(cat => {
+      // Directos
+      const catDirectLinks = links.filter(l => l.categoryId === cat.id);
+      catDirectLinks.forEach(link => {
+        rows.push([
+          cat.name,
+          'General (Directo)',
+          link.title || '',
+          link.url || '',
+          link.description || '',
+          (link.tags || []).join('; '),
+          link.isFavorite ? 'Sí' : 'No'
+        ]);
+      });
+
+      // Subcategorías
+      const subCats = targetCats.filter(c => c.parentId === cat.id);
+      subCats.forEach(sub => {
+        const subLinks = links.filter(l => l.categoryId === sub.id);
+        subLinks.forEach(link => {
+          rows.push([
+            cat.name,
+            sub.name,
+            link.title || '',
+            link.url || '',
+            link.description || '',
+            (link.tags || []).join('; '),
+            link.isFavorite ? 'Sí' : 'No'
+          ]);
+        });
+      });
+    });
+
+    // Sin Categoría si no hay filtro
+    if (!reportFilterCat) {
+      const uncategorizedLinks = links.filter(l => !l.categoryId || !categories.some(c => c.id === l.categoryId));
+      uncategorizedLinks.forEach(link => {
+        rows.push([
+          'Sin Categoría',
+          '-',
+          link.title || '',
+          link.url || '',
+          link.description || '',
+          (link.tags || []).join('; '),
+          link.isFavorite ? 'Sí' : 'No'
+        ]);
+      });
+    }
+
+    const escapeCSV = (val: string) => `"${(val || '').replace(/"/g, '""')}"`;
+    const csvContent = '\uFEFF' + [
+      headers.map(escapeCSV).join(';'),
+      ...rows.map(row => row.map(escapeCSV).join(';'))
+    ].join('\r\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.setAttribute('href', url);
+    a.setAttribute('download', `anotalink_reporte_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const generateReportText = () => {
+    let text = `📋 REPORTE DE ENLACES - ANOTALINK\n`;
+    text += `Fecha: ${new Date().toLocaleDateString()}\n`;
+    text += `Total categorías: ${categories.length} | Total enlaces: ${links.length}\n`;
+    text += `===================================================\n\n`;
+
+    const rootCats = reportFilterCat
+      ? categories.filter(c => c.id === reportFilterCat)
+      : categories.filter(c => c.parentId === null);
+
+    rootCats.forEach(cat => {
+      text += `📁 CATEGORÍA: ${cat.name.toUpperCase()}\n`;
+      const direct = links.filter(l => l.categoryId === cat.id);
+      if (direct.length > 0) {
+        direct.forEach(l => {
+          text += `  • ${l.title} ${l.isFavorite ? '⭐' : ''}\n    ${l.url}\n`;
+          if (l.description) text += `    Notas: ${l.description}\n`;
+        });
+      }
+
+      const subCats = categories.filter(c => c.parentId === cat.id);
+      subCats.forEach(sub => {
+        const sLinks = links.filter(l => l.categoryId === sub.id);
+        text += `  📂 Subcategoría: ${sub.name} (${sLinks.length} enlaces)\n`;
+        sLinks.forEach(l => {
+          text += `    - ${l.title} ${l.isFavorite ? '⭐' : ''}\n      ${l.url}\n`;
+          if (l.description) text += `      Notas: ${l.description}\n`;
+        });
+      });
+      text += `\n`;
+    });
+
+    return text;
+  };
+
+  const copyReportToClipboard = () => {
+    const text = generateReportText();
+    navigator.clipboard.writeText(text);
+    alert('¡Reporte copiado al portapapeles con éxito!');
+  };
+
+  const shareReport = async () => {
+    const text = generateReportText();
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Reporte AnotaLink',
+          text: text,
+        });
+      } catch {
+        // Cancelado
+      }
+    } else {
+      copyReportToClipboard();
+    }
   };
 
   const saveCategory = async () => {
@@ -369,7 +601,8 @@ export default function LinkNestApp() {
       setEditLinkUrl(url);
       setEditLinkTitle(domain.charAt(0).toUpperCase() + domain.slice(1));
       setEditLinkDesc('');
-      setEditLinkCat(activeCategory);
+      const defaultCat = (selectedSubCategory && selectedSubCategory !== '__parent_direct__') ? selectedSubCategory : activeCategory;
+      setEditLinkCat(defaultCat);
       setEditLinkTags('');
       
       setIsLinkModalOpen(true);
@@ -464,15 +697,24 @@ export default function LinkNestApp() {
 
   // Filtrado
   const filteredLinks = links.filter(link => {
-    // 1. Filtrar por categoría
-    if (activeCategory !== null && link.categoryId !== activeCategory) return false;
+    // 1. Filtrar por categoría / subcategoría activa
+    if (activeCategory !== null) {
+      if (selectedSubCategory === '__parent_direct__') {
+        if (link.categoryId !== activeCategory) return false;
+      } else if (selectedSubCategory !== null) {
+        if (link.categoryId !== selectedSubCategory) return false;
+      } else {
+        const hasSubCats = categories.some(c => c.parentId === activeCategory);
+        if (!hasSubCats && link.categoryId !== activeCategory) return false;
+      }
+    }
     
     // 2. Filtrar por búsqueda (Título, URL, Descripción, Etiquetas)
     if (searchQuery.trim() !== '') {
       const q = searchQuery.toLowerCase();
-      const inTitle = link.title.toLowerCase().includes(q);
+      const inTitle = link.title && link.title.toLowerCase().includes(q);
       const inDesc = link.description && link.description.toLowerCase().includes(q);
-      const inUrl = link.url.toLowerCase().includes(q);
+      const inUrl = link.url && link.url.toLowerCase().includes(q);
       const inTags = link.tags && link.tags.some((t: string) => t.toLowerCase().includes(q));
       
       if (!inTitle && !inDesc && !inUrl && !inTags) return false;
@@ -513,423 +755,439 @@ export default function LinkNestApp() {
 
   const renderLinkCard = (link: any) => {
     const category = categories.find(c => c.id === link.categoryId);
-    return (
-      <div key={link.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-2xs border border-gray-200/90 dark:border-gray-700/80 p-2 sm:p-2.5 flex items-center gap-2.5 hover:shadow-xs transition-shadow group">
-        {/* Thumbnail */}
-        <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gray-100 dark:bg-gray-700/60 rounded-lg relative overflow-hidden flex-shrink-0 flex items-center justify-center">
-          {/* Fallback de fondo */}
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-50 dark:bg-gray-800 z-0">
-            {(() => {
-              const lUrl = link.url.toLowerCase();
-              if (lUrl.includes('youtube.') || lUrl.includes('youtu.be')) return <LucideIcons.Video size={22} className="text-red-500 opacity-40" />;
-              if (lUrl.includes('instagram.')) return <LucideIcons.Camera size={22} className="text-pink-500 opacity-40" />;
-              if (lUrl.includes('facebook.') || lUrl.includes('fb.')) return <LucideIcons.Users size={22} className="text-blue-600 opacity-40" />;
-              if (lUrl.includes('twitter.') || lUrl.includes('x.com')) return <LucideIcons.MessageCircle size={22} className="text-gray-500 opacity-40" />;
-              if (lUrl.includes('linkedin.')) return <LucideIcons.Briefcase size={22} className="text-blue-700 opacity-40" />;
-              if (lUrl.includes('github.')) return <LucideIcons.Code size={22} className="text-gray-600 opacity-40" />;
-              if (lUrl.includes('tiktok.')) return <LucideIcons.Music size={22} className="text-gray-700 opacity-40" />;
-              if (lUrl.includes('twitch.')) return <LucideIcons.Tv size={22} className="text-purple-500 opacity-40" />;
-              return <LucideIcons.Globe size={22} className="text-gray-400 opacity-40" />;
-            })()}
-          </div>
+    const isCopied = copiedLinkId === link.id;
 
-          <img 
-            src={link.image?.includes('favicons?domain=') ? `/api/thumbnail?url=${encodeURIComponent(link.url)}&v=2` : (link.image?.includes('/api/thumbnail') ? link.image + '&v=2' : link.image)} 
-            alt={link.title} 
-            className="w-full h-full object-cover absolute inset-0 z-10"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              if (!target.dataset.failed) {
-                target.dataset.failed = 'true';
-                try {
-                  const urlStr = link.url.startsWith('http') ? link.url : `https://${link.url}`;
-                  const domain = new URL(urlStr).hostname;
-                  target.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
-                } catch (err) {
+    return (
+      <div 
+        key={link.id} 
+        className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200/90 dark:border-gray-700/80 p-3.5 sm:p-4 hover:shadow-md hover:border-blue-400 dark:hover:border-blue-500/50 transition-all duration-200 group flex flex-col justify-between"
+      >
+        <div className="flex items-start gap-3.5">
+          {/* Thumbnail / Favicon */}
+          <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gray-100 dark:bg-gray-700/70 rounded-xl relative overflow-hidden shrink-0 flex items-center justify-center shadow-xs">
+            {/* Fallback de fondo */}
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-50 dark:bg-gray-800 z-0">
+              {(() => {
+                const lUrl = link.url.toLowerCase();
+                if (lUrl.includes('youtube.') || lUrl.includes('youtu.be')) return <LucideIcons.Video size={24} className="text-red-500 opacity-60" />;
+                if (lUrl.includes('instagram.')) return <LucideIcons.Camera size={24} className="text-pink-500 opacity-60" />;
+                if (lUrl.includes('facebook.') || lUrl.includes('fb.')) return <LucideIcons.Users size={24} className="text-blue-600 opacity-60" />;
+                if (lUrl.includes('twitter.') || lUrl.includes('x.com')) return <LucideIcons.MessageCircle size={24} className="text-gray-600 dark:text-gray-300 opacity-60" />;
+                if (lUrl.includes('linkedin.')) return <LucideIcons.Briefcase size={24} className="text-blue-700 opacity-60" />;
+                if (lUrl.includes('github.')) return <LucideIcons.Code size={24} className="text-gray-800 dark:text-gray-200 opacity-60" />;
+                if (lUrl.includes('tiktok.')) return <LucideIcons.Music size={24} className="text-gray-900 dark:text-gray-100 opacity-60" />;
+                if (lUrl.includes('twitch.')) return <LucideIcons.Tv size={24} className="text-purple-500 opacity-60" />;
+                return <LucideIcons.Globe size={24} className="text-blue-500 opacity-50" />;
+              })()}
+            </div>
+
+            <img 
+              src={link.image?.includes('favicons?domain=') ? `/api/thumbnail?url=${encodeURIComponent(link.url)}&v=2` : (link.image?.includes('/api/thumbnail') ? link.image + '&v=2' : link.image)} 
+              alt={link.title} 
+              className="w-full h-full object-cover absolute inset-0 z-10"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                if (!target.dataset.failed) {
+                  target.dataset.failed = 'true';
+                  try {
+                    const urlStr = link.url.startsWith('http') ? link.url : `https://${link.url}`;
+                    const domain = new URL(urlStr).hostname;
+                    target.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+                  } catch {
+                    target.style.display = 'none';
+                  }
+                } else {
                   target.style.display = 'none';
                 }
-              } else {
-                target.style.display = 'none';
-              }
-            }}
-          />
-          
-          {category && (
-            <span 
-              className="absolute top-1 right-1 p-0.5 rounded text-white shadow-xs flex items-center z-20"
-              style={{ backgroundColor: category.color }}
-              title={category.name}
-            >
-              <DynamicIcon name={category.iconName} size={11} />
-            </span>
-          )}
-          {(() => {
-            const lUrl = link.url.toLowerCase();
-            let icon = null;
-            let bg = '';
-            if (lUrl.includes('youtube.') || lUrl.includes('youtu.be')) { icon = <LucideIcons.Video size={10} />; bg = 'bg-red-500'; }
-            else if (lUrl.includes('instagram.')) { icon = <LucideIcons.Camera size={10} />; bg = 'bg-pink-600'; }
-            else if (lUrl.includes('facebook.') || lUrl.includes('fb.')) { icon = <LucideIcons.Users size={10} />; bg = 'bg-blue-600'; }
-            else if (lUrl.includes('twitter.') || lUrl.includes('x.com')) { icon = <LucideIcons.MessageCircle size={10} />; bg = 'bg-blue-400 dark:bg-gray-800'; }
-            else if (lUrl.includes('linkedin.')) { icon = <LucideIcons.Briefcase size={10} />; bg = 'bg-blue-700'; }
-            else if (lUrl.includes('github.')) { icon = <LucideIcons.Code size={10} />; bg = 'bg-gray-900 dark:bg-gray-700'; }
-            else if (lUrl.includes('tiktok.')) { icon = <LucideIcons.Music size={10} />; bg = 'bg-black dark:bg-gray-800'; }
-            else if (lUrl.includes('twitch.')) { icon = <LucideIcons.Tv size={10} />; bg = 'bg-purple-600'; }
-            
-            if (!icon) return null;
-            return (
-              <span 
-                className={`absolute bottom-1 left-1 p-0.5 rounded-full text-white shadow-xs flex items-center justify-center z-20 ${bg}`}
-                title="Red de origen"
-              >
-                {icon}
-              </span>
-            );
-          })()}
-        </div>
-        
-        {/* Info */}
-        <div className="flex-1 min-w-0 flex flex-col justify-center">
-          <h3 className="font-semibold text-gray-800 dark:text-gray-100 text-xs sm:text-sm line-clamp-1 mb-0.5" title={link.title}>
-            {link.title}
-          </h3>
-          <a href={link.url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-[11px] text-blue-500 dark:text-blue-400 hover:underline mb-0.5">
-            {(() => {
-              const url = link.url.toLowerCase();
-              if (url.includes('youtube.') || url.includes('youtu.be')) return <LucideIcons.Video size={12} className="text-red-500 shrink-0" />;
-              if (url.includes('instagram.')) return <LucideIcons.Camera size={12} className="text-pink-500 shrink-0" />;
-              if (url.includes('facebook.') || url.includes('fb.')) return <LucideIcons.Users size={12} className="text-blue-600 shrink-0" />;
-              if (url.includes('twitter.') || url.includes('x.com')) return <LucideIcons.MessageCircle size={12} className="text-blue-400 dark:text-gray-300 shrink-0" />;
-              if (url.includes('linkedin.')) return <LucideIcons.Briefcase size={12} className="text-blue-700 shrink-0" />;
-              if (url.includes('github.')) return <LucideIcons.Code size={12} className="text-gray-800 dark:text-gray-200 shrink-0" />;
-              if (url.includes('tiktok.')) return <LucideIcons.Music size={12} className="text-gray-900 dark:text-gray-100 shrink-0" />;
-              if (url.includes('twitch.')) return <LucideIcons.Tv size={12} className="text-purple-500 shrink-0" />;
-              return <LucideIcons.Globe size={12} className="text-gray-400 shrink-0" />;
-            })()}
-            <span className="truncate">{link.url}</span>
-          </a>
-          {link.description ? (
-            <p className="text-[11px] text-gray-500 dark:text-gray-400 line-clamp-1">
-              {link.description}
-            </p>
-          ) : null}
-          
-          {/* Tags */}
-          {link.tags && link.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-1">
-              {link.tags.map((tag: string, i: number) => (
-                <span key={i} className="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-medium bg-gray-100 dark:bg-gray-700/80 text-gray-600 dark:text-gray-300">
-                  <Hash size={9} className="mr-0.5 opacity-50"/> {tag}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-        
-        {/* Opciones */}
-        <div className="relative pl-1.5 border-l border-gray-100 dark:border-gray-700/80 flex flex-col items-center justify-center gap-0.5">
-          {/* Estrellita de favorito (arriba del menú de los tres puntitos) */}
-          <button 
-            type="button"
-            onClick={(e) => toggleFavoriteLink(link, e)}
-            className={`p-1 rounded-md transition-colors ${
-              link.isFavorite 
-                ? 'text-yellow-400 hover:text-yellow-500 bg-yellow-50/70 dark:bg-yellow-900/20' 
-                : 'text-gray-300 dark:text-gray-600 hover:text-yellow-400 dark:hover:text-yellow-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-            }`}
-            title={link.isFavorite ? "Quitar de favoritos" : "Marcar como favorito"}
-          >
-            <Star 
-              size={14} 
-              className={link.isFavorite ? "fill-yellow-400 text-yellow-400" : ""} 
+              }}
             />
-          </button>
+            
+            {category && (
+              <span 
+                className="absolute top-1 right-1 p-1 rounded-md text-white shadow-xs flex items-center z-20"
+                style={{ backgroundColor: category.color }}
+                title={category.name}
+              >
+                <DynamicIcon name={category.iconName} size={11} />
+              </span>
+            )}
 
-          <button 
-            type="button"
-            onClick={() => setActiveLinkDropdown(activeLinkDropdown === link.id ? null : link.id)}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            title="Opciones"
-          >
-            <MoreVertical size={14} />
-          </button>
-          <button 
-            type="button"
-            onClick={() => navigator.clipboard.writeText(link.url)}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            title="Copiar enlace"
-          >
-            <Copy size={13} />
-          </button>
+            {(() => {
+              const lUrl = link.url.toLowerCase();
+              let icon = null;
+              let bg = '';
+              if (lUrl.includes('youtube.') || lUrl.includes('youtu.be')) { icon = <LucideIcons.Video size={10} />; bg = 'bg-red-500'; }
+              else if (lUrl.includes('instagram.')) { icon = <LucideIcons.Camera size={10} />; bg = 'bg-pink-600'; }
+              else if (lUrl.includes('facebook.') || lUrl.includes('fb.')) { icon = <LucideIcons.Users size={10} />; bg = 'bg-blue-600'; }
+              else if (lUrl.includes('twitter.') || lUrl.includes('x.com')) { icon = <LucideIcons.MessageCircle size={10} />; bg = 'bg-blue-400 dark:bg-gray-800'; }
+              else if (lUrl.includes('linkedin.')) { icon = <LucideIcons.Briefcase size={10} />; bg = 'bg-blue-700'; }
+              else if (lUrl.includes('github.')) { icon = <LucideIcons.Code size={10} />; bg = 'bg-gray-900 dark:bg-gray-700'; }
+              else if (lUrl.includes('tiktok.')) { icon = <LucideIcons.Music size={10} />; bg = 'bg-black dark:bg-gray-800'; }
+              else if (lUrl.includes('twitch.')) { icon = <LucideIcons.Tv size={10} />; bg = 'bg-purple-600'; }
+              
+              if (!icon) return null;
+              return (
+                <span 
+                  className={`absolute bottom-1 left-1 p-0.5 rounded-full text-white shadow-xs flex items-center justify-center z-20 ${bg}`}
+                  title="Red de origen"
+                >
+                  {icon}
+                </span>
+              );
+            })()}
+          </div>
           
-          {activeLinkDropdown === link.id && (
-            <>
-              <div 
-                className="fixed inset-0 z-10" 
-                onClick={() => setActiveLinkDropdown(null)} 
-              />
-              <div className="absolute right-0 top-10 mt-1 w-44 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 z-20 py-1 overflow-hidden">
-                <button 
-                  type="button"
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                  onClick={(e) => { setActiveLinkDropdown(null); toggleFavoriteLink(link, e); }}
-                >
-                  <Star size={14} className={link.isFavorite ? "fill-yellow-400 text-yellow-400" : "text-yellow-500"} />
-                  {link.isFavorite ? 'Quitar favorito' : 'Marcar favorito'}
-                </button>
-                <button 
-                  type="button"
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                  onClick={() => { setActiveLinkDropdown(null); openEditLinkModal(link); }}
-                >
-                  <Edit2 size={14} /> Editar
-                </button>
-                <button 
-                  type="button"
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                  onClick={() => { setActiveLinkDropdown(null); openMoveLinkModal(link); }}
-                >
-                  <Folder size={14} /> Mover
-                </button>
-                <button 
-                  type="button"
-                  className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
-                  onClick={() => { setActiveLinkDropdown(null); deleteLink(link.id); }}
-                >
-                  <Trash2 size={14} /> Eliminar
-                </button>
+          {/* Info */}
+          <div className="flex-1 min-w-0">
+            <h3 className="font-bold text-gray-900 dark:text-gray-100 text-sm sm:text-base leading-snug line-clamp-1 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" title={link.title}>
+              {link.title}
+            </h3>
+
+            <a 
+              href={link.url} 
+              target="_blank" 
+              rel="noreferrer" 
+              className="inline-flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium hover:underline mt-1 max-w-full"
+              title={link.url}
+            >
+              <span className="truncate">{link.url.replace(/^https?:\/\/(www\.)?/, '')}</span>
+              <ExternalLink size={12} className="shrink-0 opacity-70" />
+            </a>
+
+            {link.description ? (
+              <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 mt-1.5 leading-relaxed">
+                {link.description}
+              </p>
+            ) : null}
+
+            {/* Tags */}
+            {link.tags && link.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-2.5">
+                {link.tags.map((tag: string, i: number) => (
+                  <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-gray-100 dark:bg-gray-700/70 text-gray-600 dark:text-gray-300 border border-gray-200/60 dark:border-gray-600/40">
+                    <Hash size={9} className="mr-0.5 opacity-50"/> {tag}
+                  </span>
+                ))}
               </div>
-            </>
-          )}
+            )}
+          </div>
+          
+          {/* Action Buttons Column */}
+          <div className="flex flex-col items-center gap-1 shrink-0 pt-0.5">
+            {/* Favorito */}
+            <button 
+              type="button"
+              onClick={(e) => toggleFavoriteLink(link, e)}
+              className={`p-1.5 rounded-lg transition-all ${
+                link.isFavorite 
+                  ? 'text-amber-500 bg-amber-50 dark:bg-amber-900/30 hover:bg-amber-100' 
+                  : 'text-gray-300 dark:text-gray-600 hover:text-amber-500 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+              title={link.isFavorite ? "Quitar de favoritos" : "Marcar como favorito"}
+            >
+              <Star 
+                size={16} 
+                className={link.isFavorite ? "fill-amber-400 text-amber-500" : ""} 
+              />
+            </button>
+
+            {/* Copiar enlace con feedback visual */}
+            <button 
+              type="button"
+              onClick={() => copyLinkToClipboard(link.url, link.id)}
+              className={`p-1.5 rounded-lg transition-all relative ${
+                isCopied 
+                  ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30' 
+                  : 'text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+              title={isCopied ? "¡Enlace copiado!" : "Copiar enlace"}
+            >
+              {isCopied ? <Check size={16} className="text-emerald-500" /> : <Copy size={15} />}
+            </button>
+
+            {/* Menú de 3 puntos */}
+            <div className="relative">
+              <button 
+                type="button"
+                onClick={() => setActiveLinkDropdown(activeLinkDropdown === link.id ? null : link.id)}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                title="Más opciones"
+              >
+                <MoreVertical size={16} />
+              </button>
+              
+              {activeLinkDropdown === link.id && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={() => setActiveLinkDropdown(null)} 
+                  />
+                  <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-50 py-1.5 overflow-hidden">
+                    <button 
+                      type="button"
+                      className="w-full text-left px-3.5 py-2 text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 flex items-center gap-2.5 transition-colors"
+                      onClick={(e) => { setActiveLinkDropdown(null); toggleFavoriteLink(link, e); }}
+                    >
+                      <Star size={14} className={link.isFavorite ? "fill-amber-400 text-amber-500" : "text-amber-500"} />
+                      {link.isFavorite ? 'Quitar favorito' : 'Marcar favorito'}
+                    </button>
+                    <button 
+                      type="button"
+                      className="w-full text-left px-3.5 py-2 text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 flex items-center gap-2.5 transition-colors"
+                      onClick={() => { setActiveLinkDropdown(null); openEditLinkModal(link); }}
+                    >
+                      <Edit2 size={14} className="text-blue-500" /> Editar enlace
+                    </button>
+                    <button 
+                      type="button"
+                      className="w-full text-left px-3.5 py-2 text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 flex items-center gap-2.5 transition-colors"
+                      onClick={() => { setActiveLinkDropdown(null); openMoveLinkModal(link); }}
+                    >
+                      <Folder size={14} className="text-indigo-500" /> Mover categoría
+                    </button>
+                    <div className="my-1 border-t border-gray-100 dark:border-gray-700/60" />
+                    <button 
+                      type="button"
+                      className="w-full text-left px-3.5 py-2 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2.5 transition-colors"
+                      onClick={() => { setActiveLinkDropdown(null); deleteLink(link.id); }}
+                    >
+                      <Trash2 size={14} /> Eliminar
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     );
   };
 
-  const renderMainCategoryTree = (parentId: string | null, level = 0) => {
-    const children = categories.filter(c => c.parentId === parentId);
-    if (children.length === 0) return null;
+  const renderSidebarCategoriesMenu = () => {
+    const rootCats = categories.filter(c => c.parentId === null);
+    if (rootCats.length === 0) {
+      return (
+        <div className="py-6 px-3 text-center bg-gray-50 dark:bg-gray-800/40 rounded-xl border border-dashed border-gray-200 dark:border-gray-800">
+          <Folder size={24} className="mx-auto mb-2 text-gray-400 opacity-50" />
+          <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">No hay categorías aún</p>
+          <button
+            type="button"
+            onClick={() => openAddCategoryModal(null)}
+            className="mt-2 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1"
+          >
+            <Plus size={13} /> Crear la primera
+          </button>
+        </div>
+      );
+    }
 
     return (
-      <div className={level > 0 ? "ml-2.5 sm:ml-5 pl-2 sm:pl-3 border-l-2 border-blue-200/70 dark:border-blue-900/40 space-y-2 mt-2" : "space-y-2"}>
-        {children.map(cat => {
+      <div className="space-y-1.5 py-1">
+        {rootCats.map(cat => {
           const subCats = categories.filter(c => c.parentId === cat.id);
-          const catLinks = links.filter(l => l.categoryId === cat.id);
-          const totalRecursiveLinks = getRecursiveLinkCount(cat.id);
           const isExpanded = expandedCategories[cat.id];
-          const hasChildrenOrLinks = subCats.length > 0 || catLinks.length > 0;
+          const isCatSelected = activeCategory === cat.id && !selectedSubCategory;
 
           return (
             <div 
               key={cat.id} 
-              className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200/90 dark:border-gray-700/80 shadow-2xs hover:border-blue-300 dark:hover:border-blue-700 transition-all overflow-hidden"
+              className={`rounded-xl border transition-all ${
+                isCatSelected 
+                  ? 'border-blue-200 dark:border-blue-800 bg-blue-50/60 dark:bg-blue-900/20 shadow-2xs' 
+                  : 'border-transparent hover:border-gray-200 dark:hover:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50'
+              }`}
             >
-              {/* Header / Main Category Row */}
-              <div className="px-2.5 py-2 sm:px-3 sm:py-2.5 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
-                  {/* Expand / Collapse Button */}
-                  {hasChildrenOrLinks ? (
+              {/* Category row */}
+              <div className="flex items-center justify-between p-2 gap-1.5 relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveCategory(cat.id);
+                    setSelectedSubCategory(null);
+                    setMainTab('categories');
+                    if (subCats.length > 0 && !isExpanded) {
+                      setExpandedCategories(prev => ({ ...prev, [cat.id]: true }));
+                    }
+                    setIsSidebarOpen(false);
+                  }}
+                  className="flex items-center gap-2.5 flex-1 min-w-0 text-left group"
+                >
+                  <div 
+                    style={{ backgroundColor: `${cat.color}15`, color: cat.color }} 
+                    className="p-1.5 rounded-lg flex-shrink-0 transition-transform group-hover:scale-105"
+                  >
+                    <DynamicIcon name={cat.iconName} size={15} />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-xs font-semibold text-gray-800 dark:text-gray-200 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                      {cat.name}
+                    </span>
+                    {subCats.length > 0 && (
+                      <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">
+                        {subCats.length} subcat{subCats.length > 1 ? 's' : ''}
+                      </span>
+                    )}
+                  </div>
+                </button>
+
+                <div className="flex items-center gap-0.5">
+                  {/* Expand/Collapse chevron if it has subcategories */}
+                  {subCats.length > 0 && (
                     <button
                       type="button"
                       onClick={(e) => toggleExpand(cat.id, e)}
-                      className="p-1 rounded-md text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shrink-0"
-                      title={isExpanded ? "Colapsar" : "Expandir"}
+                      className="p-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-lg hover:bg-gray-200/70 dark:hover:bg-gray-700 transition-colors"
+                      title={isExpanded ? "Ocultar subcategorías" : "Ver subcategorías"}
                     >
-                      {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                      {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                     </button>
-                  ) : (
-                    <div className="w-6 flex items-center justify-center text-gray-300 dark:text-gray-600 shrink-0">
-                      <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
-                    </div>
                   )}
 
-                  {/* Icon */}
-                  <div 
-                    style={{ backgroundColor: `${cat.color}15`, color: cat.color }}
-                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg shrink-0 flex items-center justify-center"
-                  >
-                    <DynamicIcon name={cat.iconName} size={16} />
+                  {/* 3-dots Menu for Root Category */}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveSidebarDropdown(activeSidebarDropdown === cat.id ? null : cat.id);
+                      }}
+                      className="p-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-lg hover:bg-gray-200/70 dark:hover:bg-gray-700 transition-colors"
+                      title="Opciones de categoría"
+                    >
+                      <MoreVertical size={14} />
+                    </button>
+
+                    {activeSidebarDropdown === cat.id && (
+                      <>
+                        <div 
+                          className="fixed inset-0 z-40" 
+                          onClick={() => setActiveSidebarDropdown(null)} 
+                        />
+                        <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 py-1.5 z-50 text-xs">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveSidebarDropdown(null);
+                              openAddCategoryModal(cat.id);
+                            }}
+                            className="w-full text-left px-3 py-1.5 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium flex items-center gap-2 transition-colors"
+                          >
+                            <Plus size={14} /> Agregar subcategoría
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveSidebarDropdown(null);
+                              openEditCategoryModal(cat);
+                            }}
+                            className="w-full text-left px-3 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 font-medium flex items-center gap-2 transition-colors"
+                          >
+                            <Edit2 size={14} className="text-gray-500" /> Editar categoría
+                          </button>
+                          <div className="my-1 border-t border-gray-100 dark:border-gray-700" />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveSidebarDropdown(null);
+                              deleteCategory(cat.id);
+                            }}
+                            className="w-full text-left px-3 py-1.5 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 font-medium flex items-center gap-2 transition-colors"
+                          >
+                            <Trash2 size={14} /> Eliminar categoría
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
-
-                  {/* Name & Badges */}
-                  <div 
-                    className="min-w-0 cursor-pointer flex-1"
-                    onClick={() => setActiveCategory(cat.id)}
-                  >
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <h3 className="font-semibold text-gray-800 dark:text-gray-100 text-xs sm:text-sm hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate">
-                        {cat.name}
-                      </h3>
-
-                      {/* Subcategories badge */}
-                      {subCats.length > 0 && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 border border-blue-100 dark:border-blue-800/40">
-                          <Folder size={10} /> {subCats.length}
-                        </span>
-                      )}
-
-                      {/* Links badge */}
-                      <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700/60 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600">
-                        <LinkIcon size={10} /> {catLinks.length}
-                        {totalRecursiveLinks !== catLinks.length && (
-                          <span className="text-gray-400 dark:text-gray-400 font-normal">({totalRecursiveLinks})</span>
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex items-center gap-1 shrink-0">
-                  {/* Entrar / Abrir categoría */}
-                  <button
-                    type="button"
-                    onClick={() => setActiveCategory(cat.id)}
-                    className="px-2 py-1 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-md text-[11px] font-medium flex items-center gap-0.5 transition-colors"
-                    title="Abrir vista de enlaces"
-                  >
-                    <span>Abrir</span>
-                    <LucideIcons.ArrowRight size={12} />
-                  </button>
-
-                  {/* Añadir subcategoría */}
-                  <button
-                    type="button"
-                    onClick={(e) => openAddCategoryModal(cat.id, e)}
-                    className="p-1 text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-md transition-colors"
-                    title="Añadir subcategoría"
-                  >
-                    <Plus size={15} />
-                  </button>
-
-                  {/* Editar */}
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); openEditCategoryModal(cat); }}
-                    className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors"
-                    title="Editar categoría"
-                  >
-                    <Edit2 size={14} />
-                  </button>
                 </div>
               </div>
 
-              {/* Expanded Content: Subcategories and direct links */}
-              {isExpanded && (
-                <div className="px-2.5 pb-2.5 pt-1.5 sm:px-3 sm:pb-3 bg-gray-50/50 dark:bg-gray-900/20 border-t border-gray-100 dark:border-gray-700/50">
-                  {/* Direct links preview inside this category */}
-                  {catLinks.length > 0 && (
-                    <div className="mb-2">
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1">
-                          <LinkIcon size={11} /> Enlaces ({catLinks.length})
-                        </span>
+              {/* Subcategories list */}
+              {subCats.length > 0 && isExpanded && (
+                <div className="pl-4 pr-1 pb-1.5 pt-0.5 space-y-1 border-l-2 border-gray-100 dark:border-gray-800 ml-4 mb-1">
+                  {subCats.map(sub => {
+                    const isSubSelected = activeCategory === cat.id && selectedSubCategory === sub.id;
+
+                    return (
+                      <div
+                        key={sub.id}
+                        className={`flex items-center justify-between p-1.5 rounded-lg transition-all ${
+                          isSubSelected
+                            ? 'bg-blue-100/70 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-semibold'
+                            : 'hover:bg-gray-100 dark:hover:bg-gray-800/70 text-gray-600 dark:text-gray-400'
+                        }`}
+                      >
                         <button
                           type="button"
-                          onClick={() => setActiveCategory(cat.id)}
-                          className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5"
+                          onClick={() => {
+                            setActiveCategory(cat.id);
+                            setSelectedSubCategory(sub.id);
+                            setMainTab('categories');
+                            setIsSidebarOpen(false);
+                          }}
+                          className="flex items-center gap-2 flex-1 min-w-0 text-left"
                         >
-                          Ver todos →
+                          <div style={{ color: sub.color }} className="flex-shrink-0">
+                            <DynamicIcon name={sub.iconName} size={13} />
+                          </div>
+                          <span className="text-xs truncate">{sub.name}</span>
                         </button>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5 sm:gap-2">
-                        {catLinks.map(link => renderLinkCard(link))}
-                      </div>
-                    </div>
-                  )}
 
-                  {/* Subcategories tree */}
-                  {subCats.length > 0 && (
-                    <div className="mt-1.5">
-                      <div className="text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                        <Folder size={11} /> Subcategorías ({subCats.length})
-                      </div>
-                      {renderMainCategoryTree(cat.id, level + 1)}
-                    </div>
-                  )}
+                        {/* 3-dots Menu for Subcategory */}
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveSidebarDropdown(activeSidebarDropdown === sub.id ? null : sub.id);
+                            }}
+                            className="p-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-md hover:bg-gray-200/60 dark:hover:bg-gray-700 transition-colors"
+                            title="Opciones de subcategoría"
+                          >
+                            <MoreVertical size={13} />
+                          </button>
 
-                  {subCats.length === 0 && catLinks.length === 0 && (
-                    <div className="text-center py-2.5 text-xs text-gray-400 dark:text-gray-500 flex items-center justify-center gap-2">
-                      <span>Esta categoría aún no tiene subcategorías ni enlaces.</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditingLink(null);
-                          setEditLinkUrl('');
-                          setEditLinkTitle('');
-                          setEditLinkDesc('');
-                          setEditLinkCat(cat.id);
-                          setEditLinkTags('');
-                          setIsLinkModalOpen(true);
-                        }}
-                        className="text-blue-500 hover:underline font-medium"
-                      >
-                        + Añadir enlace
-                      </button>
-                    </div>
-                  )}
+                          {activeSidebarDropdown === sub.id && (
+                            <>
+                              <div 
+                                className="fixed inset-0 z-40" 
+                                onClick={() => setActiveSidebarDropdown(null)} 
+                              />
+                              <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 py-1.5 z-50 text-xs">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setActiveSidebarDropdown(null);
+                                    openEditCategoryModal(sub);
+                                  }}
+                                  className="w-full text-left px-3 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 font-medium flex items-center gap-2 transition-colors"
+                                >
+                                  <Edit2 size={13} className="text-gray-500" /> Editar subcategoría
+                                </button>
+                                <div className="my-1 border-t border-gray-100 dark:border-gray-700" />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setActiveSidebarDropdown(null);
+                                    deleteCategory(sub.id);
+                                  }}
+                                  className="w-full text-left px-3 py-1.5 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 font-medium flex items-center gap-2 transition-colors"
+                                >
+                                  <Trash2 size={13} /> Eliminar subcategoría
+                                </button>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
           );
         })}
       </div>
-    );
-  };
-
-
-  const renderCategoryTree = (parentId: string | null, level = 0) => {
-    const children = categories.filter(c => c.parentId === parentId);
-    if (children.length === 0) return null;
-
-    return (
-      <ul className={level > 0 ? "ml-4 mt-1 border-l border-gray-100 dark:border-gray-700 pl-1 space-y-1" : "space-y-1"}>
-        {children.map(cat => {
-          const hasChildren = categories.some(c => c.parentId === cat.id);
-          const isExpanded = expandedCategories[cat.id];
-          
-          return (
-            <React.Fragment key={cat.id}>
-              <li 
-                className={`flex flex-col rounded-md cursor-pointer group ${activeCategory === cat.id ? 'bg-gray-100 dark:bg-gray-800' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'}`}
-              >
-                <div 
-                  className="flex items-center justify-between p-2"
-                  onClick={() => {
-                    setActiveCategory(cat.id);
-                    if (hasChildren && !isExpanded) {
-                      setExpandedCategories(prev => ({ ...prev, [cat.id]: true }));
-                    }
-                    setIsSidebarOpen(false);
-                  }}
-                >
-                  <div className="flex items-center gap-2">
-                    {hasChildren ? (
-                      <div onClick={(e) => toggleExpand(cat.id, e)} className="p-0.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-gray-500 dark:text-gray-400">
-                        {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                      </div>
-                    ) : (
-                      <div className="w-[18px]"></div> // Spacer
-                    )}
-                    <div style={{ color: cat.color }}>
-                      <DynamicIcon name={cat.iconName} size={16} />
-                    </div>
-                    <span className={`text-sm ${activeCategory === cat.id ? 'font-medium text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300'}`}>
-                      {cat.name}
-                    </span>
-                  </div>
-                </div>
-                
-                {hasChildren && isExpanded && (
-                  <div className="pb-1">
-                    {renderCategoryTree(cat.id, level + 1)}
-                  </div>
-                )}
-              </li>
-            </React.Fragment>
-          );
-        })}
-      </ul>
     );
   };
 
@@ -1204,62 +1462,138 @@ export default function LinkNestApp() {
           </button>
         </div>
         
-        <div className="p-4 flex-1 overflow-y-auto">
-          <div className="flex flex-col gap-2 mb-4">
-            <h2 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider pl-2">Categorías</h2>
-            <button 
-              onClick={() => setIsManageCatsModalOpen(true)}
-              className="w-full flex items-center justify-center gap-2 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 rounded-lg transition-colors border border-blue-100 dark:border-blue-900/50"
-            >
-              <LucideIcons.Settings size={16} /> Gestionar Categorías
-            </button>
-          </div>
+        {/* Sidebar Body with 4 Main Options */}
+        <div className="p-3 flex-1 overflow-y-auto space-y-2">
           
-          <div 
-            className={`flex items-center gap-2 p-2 mb-1 rounded-md cursor-pointer ${activeCategory === null && mainTab === 'categories' ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-medium' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50'}`}
-            onClick={() => {
-              setActiveCategory(null);
-              setMainTab('categories');
-              setIsSidebarOpen(false);
-            }}
-          >
-            <div className="w-[18px]"></div>
-            <Folder size={16} className="text-gray-400 dark:text-gray-500" />
-            <span className="text-sm">Categorías</span>
+          {/* 1. OPCIÓN: CATEGORÍAS */}
+          <div className="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30 overflow-hidden transition-all">
+            <button
+              type="button"
+              onClick={() => setIsSidebarCatOpen(prev => !prev)}
+              className="w-full flex items-center justify-between p-3 text-left font-bold text-sm text-gray-800 dark:text-gray-100 hover:bg-gray-100/70 dark:hover:bg-gray-800/80 transition-colors"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300 rounded-xl">
+                  <Folder size={17} />
+                </div>
+                <div>
+                  <span>Categorías</span>
+                  <p className="text-[10px] font-normal text-gray-500 dark:text-gray-400">
+                    {categories.filter(c => c.parentId === null).length} principales
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 text-gray-400">
+                {isSidebarCatOpen ? <ChevronDown size={17} /> : <ChevronRight size={17} />}
+              </div>
+            </button>
+
+            {/* Despliegue de Categorías y Subcategorías sin enlaces */}
+            {isSidebarCatOpen && (
+              <div className="p-2 pt-0 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/40">
+                {/* Botón rápido para agregar categoría raíz */}
+                <div className="flex items-center justify-between py-2 px-1 mb-1 border-b border-gray-100 dark:border-gray-800/80">
+                  <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+                    Estructura
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => openAddCategoryModal(null)}
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+                  >
+                    <Plus size={13} /> Nueva categoría
+                  </button>
+                </div>
+
+                {renderSidebarCategoriesMenu()}
+              </div>
+            )}
           </div>
 
-          <div 
-            className={`flex items-center gap-2 p-2 mb-2 rounded-md cursor-pointer ${mainTab === 'favorites' ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 font-medium' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50'}`}
+          {/* 2. OPCIÓN: REPORTE */}
+          <button
+            type="button"
             onClick={() => {
+              setMainTab('report');
               setActiveCategory(null);
-              setMainTab('favorites');
+              setSelectedSubCategory(null);
               setIsSidebarOpen(false);
             }}
+            className={`w-full flex items-center justify-between p-3 rounded-2xl border text-left font-bold text-sm transition-all ${
+              mainTab === 'report'
+                ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300 shadow-xs'
+                : 'border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-800/40 text-gray-700 dark:text-gray-200 hover:border-emerald-200 dark:hover:border-emerald-900/50 hover:bg-emerald-50/40 dark:hover:bg-emerald-950/20'
+            }`}
           >
-            <div className="w-[18px]"></div>
-            <Star size={16} className="text-amber-500 fill-amber-400" />
-            <span className="text-sm">Favoritos</span>
-            <span className="ml-auto text-xs px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 font-medium">
-              {links.filter(l => l.isFavorite).length}
+            <div className="flex items-center gap-2.5">
+              <div className={`p-2 rounded-xl transition-colors ${
+                mainTab === 'report'
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-300'
+              }`}>
+                <FileSpreadsheet size={17} />
+              </div>
+              <div>
+                <span>Reporte</span>
+                <p className="text-[10px] font-normal text-gray-500 dark:text-gray-400">
+                  Planilla & exportar enlaces
+                </p>
+              </div>
+            </div>
+            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
+              {links.length}
             </span>
-          </div>
-
-          {renderCategoryTree(null)}
-        </div>
-        
-        {/* User Profile & Logout */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-800 flex items-center justify-between">
-          <div className="flex flex-col overflow-hidden">
-            <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Cuenta</span>
-            <span className="text-sm font-semibold truncate text-gray-800 dark:text-gray-200" title={user?.email || ''}>{user?.email}</span>
-          </div>
-          <button 
-            onClick={() => signOut(auth)}
-            className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
-            title="Cerrar sesión"
-          >
-            <LucideIcons.LogOut size={18} />
           </button>
+
+          {/* 3. OPCIÓN: USUARIO */}
+          <button
+            type="button"
+            onClick={() => setIsUserModalOpen(true)}
+            className="w-full flex items-center justify-between p-3 rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-gray-800/40 text-gray-700 dark:text-gray-200 hover:border-blue-200 dark:hover:border-blue-900/50 hover:bg-blue-50/40 dark:hover:bg-blue-950/20 text-left font-bold text-sm transition-all group"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              {userPhoto ? (
+                <img 
+                  src={userPhoto} 
+                  alt="Avatar" 
+                  className="w-9 h-9 rounded-xl object-cover border border-gray-200 dark:border-gray-700"
+                />
+              ) : (
+                <div className="p-2 rounded-xl bg-purple-100 text-purple-600 dark:bg-purple-900/40 dark:text-purple-300 flex-shrink-0">
+                  <UserIcon size={17} />
+                </div>
+              )}
+              <div className="flex flex-col min-w-0">
+                <span className="truncate">{userName || 'Usuario'}</span>
+                <p className="text-[10px] font-normal text-gray-500 dark:text-gray-400 truncate">
+                  {userEmail || user?.email || 'Ver y editar perfil'}
+                </p>
+              </div>
+            </div>
+            <div className="p-1 text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+              <LucideIcons.Settings size={15} />
+            </div>
+          </button>
+
+          {/* 4. OPCIÓN: SALIR */}
+          <button
+            type="button"
+            onClick={() => setIsLogoutModalOpen(true)}
+            className="w-full flex items-center justify-between p-3 rounded-2xl border border-red-100 dark:border-red-900/40 bg-red-50/30 dark:bg-red-950/10 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-200 text-left font-bold text-sm transition-all group"
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-300">
+                <LogOut size={17} />
+              </div>
+              <div>
+                <span>Salir</span>
+                <p className="text-[10px] font-normal text-red-400 dark:text-red-400/80">
+                  Cerrar sesión actual
+                </p>
+              </div>
+            </div>
+          </button>
+
         </div>
 
         {/* Firma CAELUM */}
@@ -1272,52 +1606,63 @@ export default function LinkNestApp() {
       <main className="flex-1 flex flex-col w-full overflow-hidden">
         
         {/* Topbar / Search */}
-        <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 p-3 sm:p-4 flex flex-col sm:flex-row gap-3 sm:items-center justify-between z-10">
-          <div className="flex items-center w-full gap-2">
+        <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200/90 dark:border-gray-800 p-3 sm:p-4 flex flex-col sm:flex-row gap-3 sm:items-center justify-between z-10 sticky top-0 transition-colors">
+          <div className="flex items-center w-full gap-2.5">
             <button 
-              className="md:hidden p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md"
+              className="md:hidden p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"
               onClick={() => setIsSidebarOpen(true)}
+              aria-label="Abrir menú"
             >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
             </button>
 
             <div className="relative w-full max-w-md flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={18} />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={17} />
               <input 
                 type="text" 
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Buscar por título, tag o url..." 
-                className="w-full pl-10 pr-4 py-2 bg-gray-100 dark:bg-gray-800 border-transparent rounded-lg text-sm focus:border-blue-500 dark:focus:border-blue-400 focus:bg-white dark:focus:bg-gray-900 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900 outline-none transition-all dark:text-white"
+                placeholder="Buscar por título, etiqueta o URL..." 
+                className="w-full pl-10 pr-9 py-2 bg-gray-100 dark:bg-gray-800/80 border border-transparent rounded-xl text-sm focus:border-blue-500 dark:focus:border-blue-400 focus:bg-white dark:focus:bg-gray-900 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 outline-none transition-all dark:text-white"
               />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-0.5 rounded-full"
+                  title="Limpiar búsqueda"
+                >
+                  <X size={15} />
+                </button>
+              )}
             </div>
             
             {/* Dark Mode Toggle */}
             <button 
               onClick={toggleDarkMode}
-              className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors ml-2"
-              title={isDarkMode ? "Modo Claro" : "Modo Oscuro"}
+              className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors border border-gray-200/60 dark:border-gray-700/60"
+              title={isDarkMode ? "Cambiar a Modo Claro" : "Cambiar a Modo Oscuro"}
             >
-              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+              {isDarkMode ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} />}
             </button>
             
             {/* Botón de Ayuda (Dorado) */}
             <button 
               onClick={() => setIsHelpModalOpen(true)}
-              className="p-2 ml-1 text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-full transition-colors flex items-center justify-center border border-yellow-200 dark:border-yellow-700/50 bg-yellow-50/50 dark:bg-yellow-900/10"
+              className="p-2 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-xl transition-colors flex items-center justify-center border border-amber-200 dark:border-amber-700/50 bg-amber-50/50 dark:bg-amber-900/10 shadow-2xs"
               title="Ayuda y Manual de Uso"
             >
-              <HelpCircle size={20} />
+              <HelpCircle size={18} />
             </button>
           </div>
         </header>
 
         {/* Content Area */}
-        <div className="flex-1 p-4 sm:p-6 overflow-y-auto">
+        <div className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
           
-          {/* Add New Link */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-3 sm:p-4 mb-6">
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+          {/* Add New Link Bar */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200/90 dark:border-gray-700/80 p-3 sm:p-4 mb-6 transition-all">
+            <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3">
               <div className="flex-1 relative">
                 <LinkIcon className={`absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors ${newLinkUrl ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'}`} size={18} />
                 <input 
@@ -1325,8 +1670,8 @@ export default function LinkNestApp() {
                   value={newLinkUrl}
                   onChange={(e) => setNewLinkUrl(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && saveNewLink()}
-                  placeholder="Pega una URL aquí para guardar rápidamente..." 
-                  className={`w-full pl-10 ${newLinkUrl ? 'pr-10' : 'pr-4'} py-2.5 sm:py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white font-medium placeholder-gray-400 dark:placeholder-gray-500 focus:border-blue-500 dark:focus:border-blue-400 focus:bg-white dark:focus:bg-gray-800 outline-none transition-all`}
+                  placeholder="Pega un enlace aquí para guardarlo rápidamente (ej. https://...)..." 
+                  className={`w-full pl-10 ${newLinkUrl ? 'pr-10' : 'pr-4'} py-3 bg-gray-50 dark:bg-gray-900/70 border border-gray-200 dark:border-gray-700/80 rounded-xl text-sm text-gray-900 dark:text-white font-medium placeholder-gray-400 dark:placeholder-gray-500 focus:border-blue-500 dark:focus:border-blue-400 focus:bg-white dark:focus:bg-gray-900 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30 outline-none transition-all`}
                 />
                 {newLinkUrl && (
                   <button
@@ -1341,10 +1686,10 @@ export default function LinkNestApp() {
               </div>
               <button 
                 onClick={saveNewLink}
-                className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium text-sm transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer shrink-0"
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-5 sm:px-7 py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-sm hover:shadow-md cursor-pointer shrink-0"
               >
-                <Plus size={18} />
-                Guardar
+                <Plus size={18} strokeWidth={2.5} />
+                <span>Guardar Enlace</span>
               </button>
             </div>
           </div>
@@ -1365,7 +1710,7 @@ export default function LinkNestApp() {
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="px-3 py-1.5 text-xs text-gray-600 dark:text-gray-300 hover:text-red-600 bg-gray-100 dark:bg-gray-800 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex items-center gap-1"
+                  className="px-3 py-1.5 text-xs text-gray-600 dark:text-gray-300 hover:text-red-600 bg-gray-100 dark:bg-gray-800 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors flex items-center gap-1"
                 >
                   <X size={14} /> Limpiar búsqueda
                 </button>
@@ -1377,7 +1722,7 @@ export default function LinkNestApp() {
                 const matchedCats = categories.filter(c => c.name.toLowerCase().includes(q));
                 if (matchedCats.length === 0) return null;
                 return (
-                  <div className="mb-6 p-4 bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 rounded-xl">
+                  <div className="mb-6 p-4 bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 rounded-2xl">
                     <h3 className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-2">
                       Categorías coincidentes ({matchedCats.length})
                     </h3>
@@ -1386,8 +1731,17 @@ export default function LinkNestApp() {
                         <button
                           key={cat.id}
                           type="button"
-                          onClick={() => { setActiveCategory(cat.id); setSearchQuery(''); }}
-                          className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-medium text-gray-700 dark:text-gray-200 hover:border-blue-500 transition-colors shadow-2xs"
+                          onClick={() => { 
+                            if (cat.parentId !== null) {
+                              setActiveCategory(cat.parentId);
+                              setSelectedSubCategory(cat.id);
+                            } else {
+                              setActiveCategory(cat.id);
+                              setSelectedSubCategory(null);
+                            }
+                            setSearchQuery(''); 
+                          }}
+                          className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-xs font-medium text-gray-700 dark:text-gray-200 hover:border-blue-500 transition-colors shadow-2xs"
                         >
                           <div style={{ color: cat.color }}>
                             <DynamicIcon name={cat.iconName} size={14} />
@@ -1402,15 +1756,15 @@ export default function LinkNestApp() {
               })()}
 
               {/* Grid de Enlaces */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5 sm:gap-4">
                 {filteredLinks.length === 0 ? (
-                  <div className="col-span-full py-12 text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
+                  <div className="col-span-full py-12 text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 p-8">
                     <Folder size={44} className="mx-auto mb-3 opacity-20" />
-                    <p className="font-medium text-sm">No se encontraron enlaces con ese término.</p>
+                    <p className="font-semibold text-sm">No se encontraron enlaces con ese término.</p>
                     <button
                       type="button"
                       onClick={() => setSearchQuery('')}
-                      className="mt-3 text-xs text-blue-500 hover:underline"
+                      className="mt-3 text-xs text-blue-500 hover:underline font-medium"
                     >
                       Ver todas las categorías
                     </button>
@@ -1422,53 +1776,442 @@ export default function LinkNestApp() {
             </div>
           ) : (
             <div>
-              {/* Pestañas de la Pantalla Principal: Categorías / Favoritos */}
-              <div className="flex items-center gap-2 mb-6 border-b border-gray-200 dark:border-gray-800 pb-3">
-                <button
-                  type="button"
-                  onClick={() => setMainTab('categories')}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all cursor-pointer ${
-                    mainTab === 'categories'
-                      ? 'bg-blue-600 text-white shadow-xs'
-                      : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
-                  }`}
-                >
-                  <Folder size={17} />
-                  <span>Categorías</span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                    mainTab === 'categories' 
-                      ? 'bg-blue-700 text-white' 
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
-                  }`}>
-                    {categories.length}
-                  </span>
-                </button>
+              {/* Pestañas de la Pantalla Principal y Acciones */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-3 border-b border-gray-200 dark:border-gray-800">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMainTab('categories');
+                      setActiveCategory(null);
+                      setSelectedSubCategory(null);
+                    }}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all cursor-pointer ${
+                      mainTab === 'categories' && activeCategory === null
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/60 border border-gray-200 dark:border-gray-700'
+                    }`}
+                  >
+                    <Folder size={17} />
+                    <span>Categorías</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
+                      mainTab === 'categories' && activeCategory === null
+                        ? 'bg-blue-700 text-white' 
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                    }`}>
+                      {categories.filter(c => c.parentId === null).length}
+                    </span>
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMainTab('favorites');
-                    setActiveCategory(null);
-                  }}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all cursor-pointer ${
-                    mainTab === 'favorites'
-                      ? 'bg-amber-500 text-white shadow-xs'
-                      : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
-                  }`}
-                >
-                  <Star size={17} className={mainTab === 'favorites' ? 'fill-white text-white' : 'fill-amber-400 text-amber-500'} />
-                  <span>Favoritos</span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                    mainTab === 'favorites' 
-                      ? 'bg-amber-600 text-white' 
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
-                  }`}>
-                    {links.filter(l => l.isFavorite).length}
-                  </span>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMainTab('favorites');
+                      setActiveCategory(null);
+                      setSelectedSubCategory(null);
+                    }}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all cursor-pointer ${
+                      mainTab === 'favorites'
+                        ? 'bg-amber-500 text-white shadow-sm'
+                        : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/60 border border-gray-200 dark:border-gray-700'
+                    }`}
+                  >
+                    <Star size={17} className={mainTab === 'favorites' ? 'fill-white text-white' : 'fill-amber-400 text-amber-500'} />
+                    <span>Favoritos</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
+                      mainTab === 'favorites' 
+                        ? 'bg-amber-600 text-white' 
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                    }`}>
+                      {links.filter(l => l.isFavorite).length}
+                    </span>
+                  </button>
+                </div>
+
+                {/* Acciones Rápidas */}
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <button
+                    type="button"
+                    onClick={() => setIsManageCatsModalOpen(true)}
+                    className="px-3.5 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-xl transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                  >
+                    <LucideIcons.Settings size={14} className="text-gray-500 dark:text-gray-400" />
+                    <span>Gestionar</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => openAddCategoryModal(null)}
+                    className="px-3.5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all flex items-center gap-1.5 shadow-sm hover:shadow cursor-pointer"
+                  >
+                    <Plus size={15} />
+                    <span>Nueva Categoría</span>
+                  </button>
+                </div>
               </div>
 
-              {mainTab === 'favorites' ? (
+              {mainTab === 'report' ? (
+                /* TAB REPORTE Y PLANILLA */
+                <div className="space-y-6">
+                  {/* Encabezado y Barra de Acciones de Reporte */}
+                  <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-200/80 dark:border-gray-700/80 shadow-2xs">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-gray-100 dark:border-gray-700">
+                      <div>
+                        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2.5">
+                          <div className="p-2 bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-300 rounded-xl">
+                            <FileSpreadsheet size={22} />
+                          </div>
+                          <span>Reporte General de Enlaces</span>
+                        </h2>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          Visualiza, comparte y exporta tus enlaces organizados jerárquicamente por categoría y subcategoría con sus colores distintivos.
+                        </p>
+                      </div>
+
+                      {/* Botones de Exportar / Compartir */}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={exportReportToCSV}
+                          className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-sm hover:shadow flex items-center gap-2 cursor-pointer"
+                          title="Descargar archivo compatible con Excel / Calc"
+                        >
+                          <Download size={14} />
+                          <span>Descargar Excel (.csv)</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => window.print()}
+                          className="px-3.5 py-2 rounded-xl bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer"
+                          title="Imprimir o guardar como PDF"
+                        >
+                          <Printer size={14} />
+                          <span>Imprimir / PDF</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={shareReport}
+                          className="px-3.5 py-2 rounded-xl bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer"
+                          title="Compartir lista o copiar enlace"
+                        >
+                          <Share2 size={14} />
+                          <span>Compartir</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={copyReportToClipboard}
+                          className="px-3 py-2 rounded-xl bg-gray-100 dark:bg-gray-750 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
+                          title="Copiar reporte al portapapeles"
+                        >
+                          <LucideIcons.Copy size={14} />
+                          <span>Copiar texto</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Filtros rápidos del reporte */}
+                    <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="text-gray-500 dark:text-gray-400 font-semibold">Filtrar categoría:</span>
+                        <select
+                          value={reportFilterCat}
+                          onChange={(e) => setReportFilterCat(e.target.value)}
+                          className="px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 text-xs outline-none focus:border-blue-500 font-medium"
+                        >
+                          <option value="all">Todas las categorías ({links.length} enlaces)</option>
+                          {categories.filter(c => c.parentId === null).map(rc => (
+                            <option key={rc.id} value={rc.id}>
+                              {rc.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 font-medium">
+                        <span>Total categorías: <strong className="text-gray-800 dark:text-gray-200">{categories.length}</strong></span>
+                        <span>•</span>
+                        <span>Total enlaces: <strong className="text-gray-800 dark:text-gray-200">{links.length}</strong></span>
+                        <span>•</span>
+                        <span>Favoritos: <strong className="text-amber-600 dark:text-amber-400">{links.filter(l => l.isFavorite).length}</strong></span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Planilla Visual Estructurada */}
+                  {(() => {
+                    const rootCatsToDisplay = reportFilterCat === 'all'
+                      ? categories.filter(c => c.parentId === null)
+                      : categories.filter(c => c.id === reportFilterCat);
+
+                    if (rootCatsToDisplay.length === 0) {
+                      return (
+                        <div className="py-16 text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 p-8">
+                          <FileSpreadsheet size={48} className="mx-auto mb-3 opacity-30 text-emerald-500" />
+                          <p className="font-semibold text-base mb-1">No hay enlaces ni categorías para este filtro</p>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="space-y-6">
+                        {rootCatsToDisplay.map(rootCat => {
+                          const subCats = categories.filter(c => c.parentId === rootCat.id);
+                          const directRootLinks = links.filter(l => l.categoryId === rootCat.id);
+                          const totalCatLinks = links.filter(l => {
+                            if (l.categoryId === rootCat.id) return true;
+                            return subCats.some(sc => sc.id === l.categoryId);
+                          }).length;
+
+                          return (
+                            <div 
+                              key={rootCat.id} 
+                              className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-2xs"
+                            >
+                              {/* Barra de la Categoría Raíz con su color identificativo */}
+                              <div 
+                                style={{ borderLeftColor: rootCat.color }}
+                                className="p-4 border-l-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gray-50/70 dark:bg-gray-900/40 border-b border-gray-200/80 dark:border-gray-700/80"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div 
+                                    style={{ backgroundColor: `${rootCat.color}20`, color: rootCat.color }}
+                                    className="p-2.5 rounded-xl shadow-2xs"
+                                  >
+                                    <DynamicIcon name={rootCat.iconName} size={20} />
+                                  </div>
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">
+                                        {rootCat.name}
+                                      </h3>
+                                      <span 
+                                        style={{ backgroundColor: `${rootCat.color}20`, color: rootCat.color }}
+                                        className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                                      >
+                                        Categoría Principal
+                                      </span>
+                                    </div>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                      {subCats.length} subcategoría{subCats.length === 1 ? '' : 's'} • {totalCatLinks} enlace{totalCatLinks === 1 ? '' : 's'} en total
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setActiveCategory(rootCat.id);
+                                      setSelectedSubCategory(null);
+                                      setMainTab('categories');
+                                    }}
+                                    className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-blue-400 transition-colors inline-flex items-center gap-1 cursor-pointer"
+                                  >
+                                    <Folder size={13} className="text-blue-500" />
+                                    <span>Ver en inicio</span>
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Enlaces directos de la categoría raíz si tiene */}
+                              {directRootLinks.length > 0 && (
+                                <div className="p-4 border-b border-gray-100 dark:border-gray-750">
+                                  <div className="flex items-center gap-2 mb-3">
+                                    <span className="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wide">
+                                      Enlaces Generales de {rootCat.name}
+                                    </span>
+                                    <span className="text-[11px] px-2 py-0.2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 font-semibold">
+                                      {directRootLinks.length}
+                                    </span>
+                                  </div>
+
+                                  {/* Tabla / Lista de enlaces estilizada */}
+                                  <div className="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-700/60">
+                                    <table className="w-full text-left text-xs">
+                                      <thead className="bg-gray-50 dark:bg-gray-900/60 text-gray-500 dark:text-gray-400 font-bold border-b border-gray-100 dark:border-gray-700/60">
+                                        <tr>
+                                          <th className="p-3 w-10 text-center">★</th>
+                                          <th className="p-3">Título & Notas</th>
+                                          <th className="p-3">Enlace URL</th>
+                                          <th className="p-3">Etiquetas</th>
+                                          <th className="p-3 w-24 text-right">Acción</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
+                                        {directRootLinks.map(link => (
+                                          <tr key={link.id} className="hover:bg-gray-50/80 dark:hover:bg-gray-750/50 transition-colors">
+                                            <td className="p-3 text-center">
+                                              {link.isFavorite ? (
+                                                <Star size={14} className="text-amber-500 fill-amber-400 mx-auto" />
+                                              ) : (
+                                                <span className="text-gray-300">-</span>
+                                              )}
+                                            </td>
+                                            <td className="p-3 font-medium text-gray-900 dark:text-gray-100">
+                                              <div>{link.title}</div>
+                                              {link.description && (
+                                                <div className="text-[11px] text-gray-500 dark:text-gray-400 font-normal mt-0.5 line-clamp-1">{link.description}</div>
+                                              )}
+                                            </td>
+                                            <td className="p-3 font-mono text-[11px] text-blue-600 dark:text-blue-400 max-w-[220px] truncate">
+                                              <a href={link.url} target="_blank" rel="noopener noreferrer" className="hover:underline flex items-center gap-1">
+                                                <span className="truncate">{link.url}</span>
+                                                <ExternalLink size={11} className="flex-shrink-0" />
+                                              </a>
+                                            </td>
+                                            <td className="p-3">
+                                              {link.tags && link.tags.length > 0 ? (
+                                                <div className="flex flex-wrap gap-1">
+                                                  {link.tags.map((t: string, idx: number) => (
+                                                    <span key={idx} className="px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-[10px]">
+                                                      #{t}
+                                                    </span>
+                                                  ))}
+                                                </div>
+                                              ) : (
+                                                <span className="text-gray-400 text-[10px]">—</span>
+                                              )}
+                                            </td>
+                                            <td className="p-3 text-right">
+                                              <button
+                                                type="button"
+                                                onClick={() => openEditLinkModal(link)}
+                                                className="p-1 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors inline-flex"
+                                                title="Editar enlace"
+                                              >
+                                                <Edit2 size={13} />
+                                              </button>
+                                            </td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Subcategorías de la raíz */}
+                              {subCats.length > 0 && (
+                                <div className="p-4 space-y-4 bg-gray-50/30 dark:bg-gray-900/20">
+                                  {subCats.map(subCat => {
+                                    const subLinks = links.filter(l => l.categoryId === subCat.id);
+
+                                    return (
+                                      <div 
+                                        key={subCat.id}
+                                        className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200/80 dark:border-gray-700/80 p-3.5 shadow-2xs"
+                                      >
+                                        <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-gray-100 dark:border-gray-700">
+                                          <div className="flex items-center gap-2.5">
+                                            <div 
+                                              style={{ backgroundColor: `${subCat.color}15`, color: subCat.color }}
+                                              className="p-1.5 rounded-lg"
+                                            >
+                                              <DynamicIcon name={subCat.iconName} size={15} />
+                                            </div>
+                                            <div>
+                                              <div className="flex items-center gap-2">
+                                                <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                                                  {subCat.name}
+                                                </h4>
+                                                <span 
+                                                  style={{ backgroundColor: `${subCat.color}20`, color: subCat.color }}
+                                                  className="text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                                                >
+                                                  Subcategoría
+                                                </span>
+                                              </div>
+                                            </div>
+                                          </div>
+
+                                          <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-semibold">
+                                            {subLinks.length} enlace{subLinks.length === 1 ? '' : 's'}
+                                          </span>
+                                        </div>
+
+                                        {subLinks.length === 0 ? (
+                                          <p className="text-xs text-gray-400 italic py-2">
+                                            No hay enlaces guardados en esta subcategoría todavía.
+                                          </p>
+                                        ) : (
+                                          <div className="overflow-x-auto rounded-lg border border-gray-100 dark:border-gray-700/60">
+                                            <table className="w-full text-left text-xs">
+                                              <thead className="bg-gray-50 dark:bg-gray-900/60 text-gray-500 dark:text-gray-400 font-bold border-b border-gray-100 dark:border-gray-700/60">
+                                                <tr>
+                                                  <th className="p-2.5 w-8 text-center">★</th>
+                                                  <th className="p-2.5">Título & Notas</th>
+                                                  <th className="p-2.5">Enlace URL</th>
+                                                  <th className="p-2.5">Etiquetas</th>
+                                                  <th className="p-2.5 w-20 text-right">Acción</th>
+                                                </tr>
+                                              </thead>
+                                              <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
+                                                {subLinks.map(link => (
+                                                  <tr key={link.id} className="hover:bg-gray-50/80 dark:hover:bg-gray-750/50 transition-colors">
+                                                    <td className="p-2.5 text-center">
+                                                      {link.isFavorite ? (
+                                                        <Star size={13} className="text-amber-500 fill-amber-400 mx-auto" />
+                                                      ) : (
+                                                        <span className="text-gray-300 text-[10px]">-</span>
+                                                      )}
+                                                    </td>
+                                                    <td className="p-2.5 font-medium text-gray-900 dark:text-gray-100">
+                                                      <div>{link.title}</div>
+                                                      {link.description && (
+                                                        <div className="text-[10px] text-gray-500 dark:text-gray-400 font-normal mt-0.5 line-clamp-1">{link.description}</div>
+                                                      )}
+                                                    </td>
+                                                    <td className="p-2.5 font-mono text-[11px] text-blue-600 dark:text-blue-400 max-w-[200px] truncate">
+                                                      <a href={link.url} target="_blank" rel="noopener noreferrer" className="hover:underline flex items-center gap-1">
+                                                        <span className="truncate">{link.url}</span>
+                                                        <ExternalLink size={10} className="flex-shrink-0" />
+                                                      </a>
+                                                    </td>
+                                                    <td className="p-2.5">
+                                                      {link.tags && link.tags.length > 0 ? (
+                                                        <div className="flex flex-wrap gap-1">
+                                                          {link.tags.map((t: string, idx: number) => (
+                                                            <span key={idx} className="px-1.5 py-0.2 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-[9px]">
+                                                              #{t}
+                                                            </span>
+                                                          ))}
+                                                        </div>
+                                                      ) : (
+                                                        <span className="text-gray-400 text-[10px]">—</span>
+                                                      )}
+                                                    </td>
+                                                    <td className="p-2.5 text-right">
+                                                      <button
+                                                        type="button"
+                                                        onClick={() => openEditLinkModal(link)}
+                                                        className="p-1 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors inline-flex"
+                                                        title="Editar enlace"
+                                                      >
+                                                        <Edit2 size={12} />
+                                                      </button>
+                                                    </td>
+                                                  </tr>
+                                                ))}
+                                              </tbody>
+                                            </table>
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                </div>
+              ) : mainTab === 'favorites' ? (
                 /* TAB FAVORITOS */
                 <div>
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-gray-200 dark:border-gray-800">
@@ -1478,7 +2221,7 @@ export default function LinkNestApp() {
                         Mis Enlaces Favoritos
                       </h2>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        {links.filter(l => l.isFavorite).length} enlace(s) destacados con la estrellita amarilla
+                        {links.filter(l => l.isFavorite).length} enlace(s) destacados con la estrellita dorada
                       </p>
                     </div>
                   </div>
@@ -1490,215 +2233,517 @@ export default function LinkNestApp() {
                         Aún no tienes enlaces favoritos
                       </p>
                       <p className="text-xs text-gray-400 mb-5 max-w-sm mx-auto">
-                        Haz clic en la estrellita amarilla de cualquier enlace (arriba del menú de tres puntitos) para marcarlo como favorito y tenerlo a mano aquí.
+                        Haz clic en la estrellita amarilla de cualquier enlace para marcarlo como favorito y tenerlo a mano aquí.
                       </p>
                       <button
                         type="button"
-                        onClick={() => setMainTab('categories')}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-medium transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+                        onClick={() => {
+                          setMainTab('categories');
+                          setActiveCategory(null);
+                        }}
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold transition-colors inline-flex items-center gap-1.5 cursor-pointer"
                       >
                         <Folder size={15} /> Ver Categorías
                       </button>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5 sm:gap-4">
                       {links.filter(l => l.isFavorite).map(link => renderLinkCard(link))}
                     </div>
                   )}
                 </div>
               ) : activeCategory !== null ? (
-                /* ACTIVE CATEGORY FOCUSED VIEW */
+                /* CATEGORÍA SELECCIONADA: DESPLIEGUE JERÁRQUICO DE SUBCATEGORÍAS Y LINKS */
                 <div>
-                  {/* Breadcrumbs y Barra Superior */}
                   {(() => {
                     const activeCatObj = categories.find(c => c.id === activeCategory);
                     const path = getCategoryPath(activeCategory);
                     const subCats = categories.filter(c => c.parentId === activeCategory);
+                    const directLinks = links.filter(l => l.categoryId === activeCategory);
+                    const selectedSubCategoryObj = selectedSubCategory && selectedSubCategory !== '__parent_direct__' 
+                      ? categories.find(c => c.id === selectedSubCategory) 
+                      : null;
+
+                    // Determinamos los enlaces que corresponden mostrar según la subcategoría seleccionada
+                    let displayLinks: any[] = [];
+                    let activeTargetTitle = activeCatObj?.name || 'Categoría';
+                    let activeTargetColor = activeCatObj?.color || '#3b82f6';
+                    let activeTargetIcon = activeCatObj?.iconName || 'Folder';
+                    let activeTargetCatId: string | null = activeCategory;
+
+                    if (subCats.length > 0) {
+                      if (selectedSubCategory === '__parent_direct__') {
+                        displayLinks = directLinks;
+                        activeTargetTitle = `General (${activeCatObj?.name})`;
+                      } else if (selectedSubCategoryObj) {
+                        displayLinks = links.filter(l => l.categoryId === selectedSubCategory);
+                        activeTargetTitle = selectedSubCategoryObj.name;
+                        activeTargetColor = selectedSubCategoryObj.color;
+                        activeTargetIcon = selectedSubCategoryObj.iconName;
+                        activeTargetCatId = selectedSubCategory;
+                      } else {
+                        // Aún no seleccionó subcategoría
+                        displayLinks = [];
+                      }
+                    } else {
+                      // No tiene subcategorías, muestra los enlaces directos
+                      displayLinks = directLinks;
+                    }
 
                     return (
-                      <div className="space-y-4 mb-6">
-                        {/* Breadcrumbs */}
-                        <nav className="flex items-center flex-wrap gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-                          <button
-                            type="button"
-                            onClick={() => setActiveCategory(null)}
-                            className="hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 font-medium"
-                          >
-                            <Folder size={13} />
-                            Todas las Categorías
-                          </button>
-                          {path.map((p, idx) => (
-                            <React.Fragment key={p.id}>
-                              <ChevronRight size={12} className="text-gray-400" />
-                              <button
-                                type="button"
-                                onClick={() => setActiveCategory(p.id)}
-                                className={`font-medium ${idx === path.length - 1 ? 'text-gray-900 dark:text-gray-100 font-semibold' : 'hover:text-blue-600 dark:hover:text-blue-400'}`}
-                              >
-                                {p.name}
-                              </button>
-                            </React.Fragment>
-                          ))}
-                        </nav>
-
-                        {/* Banner de la Categoría */}
-                        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                          <div className="flex items-center gap-3.5">
-                            <div
-                              style={{ backgroundColor: `${activeCatObj?.color || '#3b82f6'}15`, color: activeCatObj?.color || '#3b82f6' }}
-                              className="p-3 rounded-xl flex items-center justify-center shrink-0"
-                            >
-                              <DynamicIcon name={activeCatObj?.iconName || 'Folder'} size={24} />
-                            </div>
-                            <div>
-                              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                                {activeCatObj?.name || 'Categoría'}
-                              </h2>
-                              <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                                <span>{filteredLinks.length} {filteredLinks.length === 1 ? 'enlace' : 'enlaces'}</span>
-                                {subCats.length > 0 && (
-                                  <>
-                                    <span>•</span>
-                                    <span>{subCats.length} subcategoría(s)</span>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center flex-wrap gap-2">
-                            <button
-                              type="button"
-                              onClick={() => setActiveCategory(null)}
-                              className="px-3 py-2 text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white bg-gray-100 dark:bg-gray-700/60 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-colors flex items-center gap-1.5"
-                            >
-                              <LucideIcons.ArrowLeft size={14} /> Volver a categorías
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => openAddCategoryModal(activeCategory)}
-                              className="px-3 py-2 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-xl transition-colors flex items-center gap-1.5 border border-blue-100 dark:border-blue-800/40"
-                            >
-                              <Plus size={14} /> Subcategoría
-                            </button>
+                      <div className="space-y-6">
+                        {/* Breadcrumbs y Barra Superior */}
+                        <div className="space-y-3">
+                          <nav className="flex items-center flex-wrap gap-1.5 text-xs text-gray-500 dark:text-gray-400">
                             <button
                               type="button"
                               onClick={() => {
-                                setEditingLink(null);
-                                setEditLinkUrl('');
-                                setEditLinkTitle('');
-                                setEditLinkDesc('');
-                                setEditLinkCat(activeCategory);
-                                setEditLinkTags('');
-                                setIsLinkModalOpen(true);
+                                setActiveCategory(null);
+                                setSelectedSubCategory(null);
                               }}
-                              className="px-3.5 py-2 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors flex items-center gap-1.5 shadow-2xs"
+                              className="hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 font-semibold transition-colors"
                             >
-                              <Plus size={14} /> Guardar enlace aquí
+                              <Folder size={13} />
+                              Todas las Categorías
                             </button>
+                            {path.map((p, idx) => (
+                              <React.Fragment key={p.id}>
+                                <ChevronRight size={12} className="text-gray-400" />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setActiveCategory(p.id);
+                                    setSelectedSubCategory(null);
+                                  }}
+                                  className={`font-semibold transition-colors ${
+                                    idx === path.length - 1 && !selectedSubCategoryObj 
+                                      ? 'text-gray-900 dark:text-gray-100' 
+                                      : 'hover:text-blue-600 dark:hover:text-blue-400'
+                                  }`}
+                                >
+                                  {p.name}
+                                </button>
+                              </React.Fragment>
+                            ))}
+                            {selectedSubCategoryObj && (
+                              <React.Fragment>
+                                <ChevronRight size={12} className="text-gray-400" />
+                                <span className="font-bold text-gray-900 dark:text-gray-100">
+                                  {selectedSubCategoryObj.name}
+                                </span>
+                              </React.Fragment>
+                            )}
+                          </nav>
+
+                          {/* Banner de la Categoría Principal */}
+                          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200/90 dark:border-gray-700/80 p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div className="flex items-center gap-3.5">
+                              <div
+                                style={{ backgroundColor: `${activeCatObj?.color || '#3b82f6'}18`, color: activeCatObj?.color || '#3b82f6' }}
+                                className="w-13 h-13 rounded-2xl flex items-center justify-center shrink-0 shadow-xs"
+                              >
+                                <DynamicIcon name={activeCatObj?.iconName || 'Folder'} size={24} />
+                              </div>
+                              <div>
+                                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
+                                  {activeCatObj?.name || 'Categoría'}
+                                </h2>
+                                <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-gray-400 font-medium">
+                                  <span>{getRecursiveLinkCount(activeCategory)} {getRecursiveLinkCount(activeCategory) === 1 ? 'enlace total' : 'enlaces totales'}</span>
+                                  {subCats.length > 0 && (
+                                    <>
+                                      <span>•</span>
+                                      <span className="text-blue-600 dark:text-blue-400 font-semibold">{subCats.length} {subCats.length === 1 ? 'subcategoría' : 'subcategorías'}</span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center flex-wrap gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveCategory(null);
+                                  setSelectedSubCategory(null);
+                                }}
+                                className="px-3.5 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white bg-gray-100 dark:bg-gray-700/70 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer"
+                              >
+                                <LucideIcons.ArrowLeft size={14} /> Volver a categorías
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => openAddCategoryModal(activeCategory)}
+                                className="px-3.5 py-2 text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-xl transition-colors flex items-center gap-1.5 border border-blue-200/60 dark:border-blue-800/40 cursor-pointer"
+                              >
+                                <Plus size={14} /> Subcategoría
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingLink(null);
+                                  setEditLinkUrl('');
+                                  setEditLinkTitle('');
+                                  setEditLinkDesc('');
+                                  setEditLinkCat(activeTargetCatId);
+                                  setEditLinkTags('');
+                                  setIsLinkModalOpen(true);
+                                }}
+                                className="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
+                              >
+                                <Plus size={14} strokeWidth={2.5} /> Guardar enlace
+                              </button>
+                            </div>
                           </div>
                         </div>
 
-                        {/* Subcategorías hijas directas si existen */}
+                        {/* DESPLIEGUE DE SUBCATEGORÍAS */}
                         {subCats.length > 0 && (
-                          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 p-3.5">
-                            <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-                              <Folder size={13} /> Subcategorías dentro de {activeCatObj?.name}
-                            </h4>
-                            <div className="flex flex-wrap gap-2">
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                                  <Folder size={15} className="text-blue-500" />
+                                  Subcategorías en {activeCatObj?.name}
+                                </h3>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                  Toca una tarjeta de subcategoría para desplegar sus enlaces:
+                                </p>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => openAddCategoryModal(activeCategory)}
+                                className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                              >
+                                <Plus size={14} /> Agregar subcategoría
+                              </button>
+                            </div>
+
+                            {/* Cuadrícula de tarjetas de subcategorías */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-3.5">
                               {subCats.map(sub => {
-                                const subLinkCount = links.filter(l => l.categoryId === sub.id).length;
+                                const isSelected = selectedSubCategory === sub.id;
+                                const subLinksCount = links.filter(l => l.categoryId === sub.id).length;
+
                                 return (
-                                  <button
+                                  <div
                                     key={sub.id}
-                                    type="button"
-                                    onClick={() => setActiveCategory(sub.id)}
-                                    className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 rounded-xl text-xs font-medium text-gray-800 dark:text-gray-200 transition-all shadow-2xs group"
+                                    onClick={() => setSelectedSubCategory(sub.id)}
+                                    style={{
+                                      borderColor: isSelected ? sub.color : undefined,
+                                      backgroundColor: isSelected ? `${sub.color}10` : undefined
+                                    }}
+                                    className={`rounded-2xl border p-4 cursor-pointer transition-all duration-200 flex flex-col justify-between group relative ${
+                                      isSelected
+                                        ? 'shadow-md border-2 ring-2 ring-offset-1 dark:ring-offset-gray-900 ring-blue-500/20'
+                                        : 'bg-white dark:bg-gray-800 border-gray-200/90 dark:border-gray-700/80 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-xs'
+                                    }`}
                                   >
-                                    <div style={{ color: sub.color }}>
-                                      <DynamicIcon name={sub.iconName} size={15} />
+                                    <div className="flex items-center justify-between mb-3">
+                                      <div 
+                                        style={{ backgroundColor: `${sub.color}20`, color: sub.color }}
+                                        className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-2xs"
+                                      >
+                                        <DynamicIcon name={sub.iconName} size={18} />
+                                      </div>
+
+                                      <div className="flex items-center gap-1">
+                                        {isSelected && (
+                                          <span 
+                                            style={{ backgroundColor: sub.color }}
+                                            className="w-5 h-5 rounded-full text-white flex items-center justify-center shadow-xs"
+                                            title="Subcategoría activa"
+                                          >
+                                            <Check size={12} strokeWidth={3} />
+                                          </span>
+                                        )}
+                                        <button
+                                          type="button"
+                                          onClick={(e) => { e.stopPropagation(); openEditCategoryModal(sub); }}
+                                          className="p-1 text-gray-400 hover:text-blue-600 rounded-lg transition-colors opacity-60 hover:opacity-100"
+                                          title="Editar subcategoría"
+                                        >
+                                          <Edit2 size={13} />
+                                        </button>
+                                      </div>
                                     </div>
-                                    <span>{sub.name}</span>
-                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 group-hover:bg-blue-100 dark:group-hover:bg-blue-800/40 group-hover:text-blue-600 dark:group-hover:text-blue-300">
-                                      {subLinkCount}
-                                    </span>
-                                  </button>
+
+                                    <div>
+                                      <h4 className={`text-sm font-bold truncate mb-1.5 ${isSelected ? 'text-gray-950 dark:text-white font-extrabold' : 'text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400'}`}>
+                                        {sub.name}
+                                      </h4>
+                                      <div className="flex items-center justify-between">
+                                        <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full inline-block ${
+                                          isSelected 
+                                            ? 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-2xs' 
+                                            : 'bg-gray-100 dark:bg-gray-700/70 text-gray-500 dark:text-gray-400'
+                                        }`}>
+                                          {subLinksCount} {subLinksCount === 1 ? 'enlace' : 'enlaces'}
+                                        </span>
+                                        <span className={`text-[11px] font-medium flex items-center gap-0.5 ${isSelected ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-gray-400 group-hover:text-blue-500'}`}>
+                                          {isSelected ? 'Activo' : 'Ver links →'}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
                                 );
                               })}
+
+                              {/* Opción adicional para enlaces directos en la categoría padre si existen */}
+                              {directLinks.length > 0 && (
+                                <div
+                                  onClick={() => setSelectedSubCategory('__parent_direct__')}
+                                  className={`rounded-2xl border p-4 cursor-pointer transition-all duration-200 flex flex-col justify-between group ${
+                                    selectedSubCategory === '__parent_direct__'
+                                      ? 'bg-blue-50/70 dark:bg-blue-900/30 border-blue-500 border-2 shadow-md'
+                                      : 'bg-white dark:bg-gray-800 border-dashed border-gray-300 dark:border-gray-700 hover:border-blue-400'
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between mb-3">
+                                    <div className="w-9 h-9 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center justify-center shrink-0">
+                                      <Folder size={18} />
+                                    </div>
+                                    {selectedSubCategory === '__parent_direct__' && (
+                                      <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-xs">
+                                        <Check size={12} strokeWidth={3} />
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div>
+                                    <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 truncate mb-1.5">
+                                      General ({activeCatObj?.name})
+                                    </h4>
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700/70 text-gray-500 dark:text-gray-400">
+                                        {directLinks.length} {directLinks.length === 1 ? 'enlace directo' : 'enlaces directos'}
+                                      </span>
+                                      <span className="text-[11px] font-medium text-gray-400 group-hover:text-blue-500">
+                                        Ver links →
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
                             </div>
+                          </div>
+                        )}
+
+                        {/* SECCIÓN DE ENLACES SELECCIONADOS */}
+                        {subCats.length > 0 && selectedSubCategory === null ? (
+                          /* Mensaje amigable: esperando selección de subcategoría */
+                          <div className="py-14 px-6 text-center bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 p-8 shadow-xs">
+                            <div 
+                              style={{ backgroundColor: `${activeCatObj?.color || '#3b82f6'}18`, color: activeCatObj?.color || '#3b82f6' }}
+                              className="w-16 h-16 rounded-2xl mx-auto mb-3 flex items-center justify-center"
+                            >
+                              <Folder size={32} />
+                            </div>
+                            <h4 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-1">
+                              Toca una subcategoría arriba para desplegar sus enlaces
+                            </h4>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 max-w-md mx-auto mb-5">
+                              Al presionar en "{subCats[0]?.name}" u otra subcategoría, aparecerán de inmediato todas las pestañas de sus enlaces guardados.
+                            </p>
+                            <div className="flex items-center justify-center flex-wrap gap-2">
+                              {subCats.slice(0, 3).map(s => (
+                                <button
+                                  key={s.id}
+                                  type="button"
+                                  onClick={() => setSelectedSubCategory(s.id)}
+                                  className="px-3.5 py-1.5 text-xs font-semibold bg-gray-100 dark:bg-gray-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl transition-colors cursor-pointer"
+                                >
+                                  Ver enlaces de {s.name} →
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          /* RECIÉN SE MUESTRAN LOS LINKS SELECCIONADOS */
+                          <div className="space-y-4 pt-2">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-200 dark:border-gray-800">
+                              <div className="flex items-center gap-2.5">
+                                <div 
+                                  style={{ backgroundColor: `${activeTargetColor}20`, color: activeTargetColor }}
+                                  className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-2xs"
+                                >
+                                  <DynamicIcon name={activeTargetIcon} size={16} />
+                                </div>
+                                <div>
+                                  <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                                    Enlaces en {activeTargetTitle}
+                                  </h3>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                                    {displayLinks.length} {displayLinks.length === 1 ? 'enlace guardado' : 'enlaces guardados'}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingLink(null);
+                                  setEditLinkUrl('');
+                                  setEditLinkTitle('');
+                                  setEditLinkDesc('');
+                                  setEditLinkCat(activeTargetCatId);
+                                  setEditLinkTags('');
+                                  setIsLinkModalOpen(true);
+                                }}
+                                className="px-3.5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all shadow-xs flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
+                              >
+                                <Plus size={14} strokeWidth={2.5} />
+                                <span>Añadir enlace en {activeTargetTitle}</span>
+                              </button>
+                            </div>
+
+                            {displayLinks.length === 0 ? (
+                              <div className="py-12 text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 p-8 shadow-xs">
+                                <LinkIcon size={44} className="mx-auto mb-2.5 text-gray-300 dark:text-gray-600" />
+                                <p className="font-bold text-sm text-gray-800 dark:text-gray-200 mb-1">
+                                  Aún no hay enlaces en "{activeTargetTitle}"
+                                </p>
+                                <p className="text-xs text-gray-400 mb-4 max-w-sm mx-auto">
+                                  Pega una URL en la barra superior o presiona el botón para añadir el primer enlace.
+                                </p>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingLink(null);
+                                    setEditLinkUrl('');
+                                    setEditLinkTitle('');
+                                    setEditLinkDesc('');
+                                    setEditLinkCat(activeTargetCatId);
+                                    setEditLinkTags('');
+                                    setIsLinkModalOpen(true);
+                                  }}
+                                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
+                                >
+                                  <Plus size={15} strokeWidth={2.5} /> Añadir primer enlace
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5 sm:gap-4">
+                                {displayLinks.map(link => renderLinkCard(link))}
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
                     );
                   })()}
-
-                  {/* Lista de enlaces de la categoría */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
-                    {filteredLinks.length === 0 ? (
-                      <div className="col-span-full py-12 text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 p-8">
-                        <Folder size={48} className="mx-auto mb-3 opacity-20" />
-                        <p className="font-medium text-base mb-1">Aún no hay enlaces en esta categoría</p>
-                        <p className="text-xs text-gray-400 mb-4 max-w-sm mx-auto">
-                          Pega una URL en la barra superior o utiliza el botón para añadir el primer enlace.
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditingLink(null);
-                            setEditLinkUrl('');
-                            setEditLinkTitle('');
-                            setEditLinkDesc('');
-                            setEditLinkCat(activeCategory);
-                            setEditLinkTags('');
-                            setIsLinkModalOpen(true);
-                          }}
-                          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-medium transition-colors inline-flex items-center gap-1.5"
-                        >
-                          <Plus size={15} /> Añadir primer enlace
-                        </button>
-                      </div>
-                    ) : (
-                      filteredLinks.map(link => renderLinkCard(link))
-                    )}
-                  </div>
                 </div>
               ) : (
-                /* HOME MAIN SCREEN: NESTED CATEGORIES VIEW */
+                /* PANTALLA DE INICIO: TODAS LAS CATEGORÍAS EN TARJETAS MODERNAS (CARDS) */
                 <div>
-                  {/* Header de Categorías Anidadas */}
-                  <div className="flex items-center justify-between gap-3 mb-3 pb-2.5 border-b border-gray-200 dark:border-gray-800">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-                      {categories.length} categorías organizadas • {links.length} enlaces guardados
-                    </p>
-
-                    <button
-                      type="button"
-                      onClick={() => openAddCategoryModal(null)}
-                      className="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center gap-1 shadow-xs shrink-0"
-                    >
-                      <Plus size={14} /> Nueva Categoría
-                    </button>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+                    <div>
+                      <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                        <Folder className="text-blue-500" size={20} />
+                        Todas las Categorías
+                      </h2>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        {categories.filter(c => c.parentId === null).length} categorías principales • {links.length} enlaces guardados
+                      </p>
+                    </div>
                   </div>
 
-                  {/* Árbol Anidado de Categorías */}
                   {categories.filter(c => c.parentId === null).length === 0 ? (
-                    <div className="py-12 text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-xl border border-dashed border-gray-300 dark:border-gray-700 p-6">
-                      <Folder size={44} className="mx-auto mb-2 opacity-20 text-blue-500" />
-                      <p className="font-semibold text-sm mb-1 text-gray-800 dark:text-gray-200">No hay categorías creadas aún</p>
-                      <p className="text-xs text-gray-400 mb-4 max-w-sm mx-auto">
-                        Crea tu primera categoría para empezar a organizar tus carpetas y enlaces de manera anidada.
+                    <div className="py-14 text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 p-8 shadow-xs">
+                      <Folder size={48} className="mx-auto mb-3 opacity-20 text-blue-500" />
+                      <p className="font-bold text-base mb-1 text-gray-800 dark:text-gray-200">No hay categorías creadas aún</p>
+                      <p className="text-xs text-gray-400 mb-5 max-w-sm mx-auto">
+                        Crea tu primera categoría para empezar a organizar tus enlaces y subcategorías de forma rápida.
                       </p>
                       <button
                         type="button"
                         onClick={() => openAddCategoryModal(null)}
-                        className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition-colors inline-flex items-center gap-1"
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-colors inline-flex items-center gap-1.5 shadow-sm cursor-pointer"
                       >
                         <Plus size={15} /> Crear Primera Categoría
                       </button>
                     </div>
                   ) : (
-                    <div className="space-y-2">
-                      {renderMainCategoryTree(null)}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
+                      {categories.filter(c => c.parentId === null).map(cat => {
+                        const catSubCats = categories.filter(c => c.parentId === cat.id);
+                        const totalLinks = getRecursiveLinkCount(cat.id);
+
+                        return (
+                          <div 
+                            key={cat.id}
+                            onClick={() => {
+                              setActiveCategory(cat.id);
+                              setSelectedSubCategory(null);
+                            }}
+                            className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200/90 dark:border-gray-700/80 p-5 shadow-xs hover:shadow-lg hover:-translate-y-0.5 hover:border-blue-400 dark:hover:border-blue-500/50 transition-all duration-200 cursor-pointer flex flex-col justify-between group relative overflow-hidden"
+                          >
+                            {/* Barra superior de acento con el color de la categoría */}
+                            <div 
+                              className="absolute top-0 left-0 right-0 h-1.5 transition-all group-hover:h-2"
+                              style={{ backgroundColor: cat.color }}
+                            />
+
+                            <div>
+                              {/* Fila superior: Ícono y opciones */}
+                              <div className="flex items-start justify-between gap-3 mb-4 pt-1">
+                                <div 
+                                  style={{ backgroundColor: `${cat.color}18`, color: cat.color }}
+                                  className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform"
+                                >
+                                  <DynamicIcon name={cat.iconName} size={22} />
+                                </div>
+
+                                <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => openAddCategoryModal(cat.id, e)}
+                                    className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-xl transition-colors"
+                                    title="Añadir subcategoría"
+                                  >
+                                    <Plus size={16} />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); openEditCategoryModal(cat); }}
+                                    className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-colors"
+                                    title="Editar categoría"
+                                  >
+                                    <Edit2 size={15} />
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Nombre de la categoría */}
+                              <h3 className="font-bold text-gray-900 dark:text-gray-100 text-base sm:text-lg mb-2.5 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
+                                {cat.name}
+                              </h3>
+
+                              {/* Badges de Información */}
+                              <div className="flex items-center flex-wrap gap-2 mb-4">
+                                {catSubCats.length > 0 && (
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/40">
+                                    <Folder size={12} />
+                                    {catSubCats.length} {catSubCats.length === 1 ? 'subcategoría' : 'subcategorías'}
+                                  </span>
+                                )}
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-gray-100 dark:bg-gray-700/60 text-gray-700 dark:text-gray-300 border border-gray-200/60 dark:border-gray-600/40">
+                                  <LinkIcon size={12} />
+                                  {totalLinks} {totalLinks === 1 ? 'enlace' : 'enlaces'}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Footer de la Tarjeta */}
+                            <div className="pt-3 border-t border-gray-100 dark:border-gray-700/60 flex items-center justify-between text-xs font-semibold text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                              <span>
+                                {catSubCats.length > 0 ? 'Ver subcategorías' : 'Ver enlaces'}
+                              </span>
+                              <ChevronRight size={16} className="transform group-hover:translate-x-1 transition-transform" />
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -2365,6 +3410,285 @@ export default function LinkNestApp() {
                 className="px-6 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg text-sm font-bold transition-colors shadow-sm w-full"
               >
                 ¡Entendido!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE USUARIO (DATOS CONSULTABLES Y EDITABLES) */}
+      {isUserModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-gray-100 dark:border-gray-700 flex flex-col max-h-[90vh]">
+            
+            {/* Modal Header */}
+            <div className="p-4 sm:p-5 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50/70 dark:bg-gray-900/50">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300 rounded-xl">
+                  <UserIcon size={20} />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">
+                    Mi Perfil de Usuario
+                  </h2>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Consulta y edita tus datos de cuenta
+                  </p>
+                </div>
+              </div>
+              <button 
+                type="button"
+                onClick={() => {
+                  setIsUserModalOpen(false);
+                  setUserProfileMsg('');
+                  setUserProfileError('');
+                }} 
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-5 sm:p-6 overflow-y-auto space-y-5">
+              
+              {/* Notificaciones de éxito / error */}
+              {userProfileMsg && (
+                <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-center gap-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                  <CheckCircle2 size={16} className="flex-shrink-0" />
+                  <span>{userProfileMsg}</span>
+                </div>
+              )}
+              {userProfileError && (
+                <div className="p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl flex items-center gap-2 text-xs font-semibold text-red-600 dark:text-red-300">
+                  <AlertTriangle size={16} className="flex-shrink-0" />
+                  <span>{userProfileError}</span>
+                </div>
+              )}
+
+              {/* Tarjeta de Resumen y Avatar */}
+              <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-2xl border border-gray-100 dark:border-gray-700/60 flex items-center gap-4">
+                {userPhoto ? (
+                  <img 
+                    src={userPhoto} 
+                    alt="Avatar" 
+                    className="w-16 h-16 rounded-2xl object-cover border-2 border-blue-500 shadow-sm flex-shrink-0" 
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center text-xl font-bold flex-shrink-0 shadow-sm">
+                    {(userName || userEmail || 'U').charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 truncate">
+                    {userName || 'Usuario Sin Nombre'}
+                  </h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 font-mono truncate">
+                    {userEmail || user?.email}
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2 text-[10px]">
+                    <span className="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-semibold">
+                      {links.length} enlaces
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 font-semibold">
+                      {categories.length} categorías
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Formulario Editable */}
+              <div className="space-y-4">
+                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                  Datos Editables
+                </h4>
+
+                {/* Nombre de Usuario */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    Nombre o Apodo
+                  </label>
+                  <input
+                    type="text"
+                    value={userName}
+                    onChange={(e) => setUserName(e.target.value)}
+                    placeholder="Ej. Juan Pérez"
+                    className="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                  />
+                </div>
+
+                {/* Foto / Avatar URL */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    URL de Avatar / Foto de Perfil
+                  </label>
+                  <input
+                    type="url"
+                    value={userPhoto}
+                    onChange={(e) => setUserPhoto(e.target.value)}
+                    placeholder="https://..."
+                    className="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                  />
+                  {/* Avatares sugeridos rápidos */}
+                  <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[10px] text-gray-400 font-medium">Sugeridos:</span>
+                    {[
+                      'https://api.dicebear.com/7.x/bottts/svg?seed=AnotaLink',
+                      'https://api.dicebear.com/7.x/adventurer/svg?seed=Felix',
+                      'https://api.dicebear.com/7.x/adventurer/svg?seed=Aneka',
+                      'https://api.dicebear.com/7.x/fun-emoji/svg?seed=Star',
+                    ].map((avatarUrl, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setUserPhoto(avatarUrl)}
+                        className="text-[10px] px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-600 dark:text-gray-300 transition-colors"
+                      >
+                        Avatar {i + 1}
+                      </button>
+                    ))}
+                    {userPhoto && (
+                      <button
+                        type="button"
+                        onClick={() => setUserPhoto('')}
+                        className="text-[10px] px-2 py-0.5 rounded-md bg-red-50 dark:bg-red-900/20 text-red-600 hover:bg-red-100 transition-colors"
+                      >
+                        Quitar foto
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Correo Electrónico */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    Correo Electrónico
+                  </label>
+                  <input
+                    type="email"
+                    value={userEmail}
+                    onChange={(e) => setUserEmail(e.target.value)}
+                    placeholder="correo@ejemplo.com"
+                    className="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-mono"
+                  />
+                  <p className="text-[10px] text-gray-400 mt-1">
+                    Si cambias el correo, Firebase podría requerir que vuelvas a iniciar sesión recientemente.
+                  </p>
+                </div>
+
+                {/* Cambio de Contraseña */}
+                <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                      Nueva Contraseña (opcional)
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleSendPasswordReset}
+                      className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      Enviar correo de recuperación
+                    </button>
+                  </div>
+                  <input
+                    type="password"
+                    value={userNewPassword}
+                    onChange={(e) => setUserNewPassword(e.target.value)}
+                    placeholder="Mínimo 6 caracteres (dejar vacío para mantener actual)"
+                    className="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                  />
+                </div>
+
+                {/* Metadatos de la cuenta consultables */}
+                <div className="pt-2 border-t border-gray-100 dark:border-gray-700 space-y-1.5 text-[11px] text-gray-500 dark:text-gray-400">
+                  <div className="flex justify-between">
+                    <span>ID de Usuario (UID):</span>
+                    <span className="font-mono text-gray-700 dark:text-gray-300 max-w-[200px] truncate">{user?.uid}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Cuenta creada:</span>
+                    <span className="text-gray-700 dark:text-gray-300">
+                      {user?.metadata?.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString() : 'N/A'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Último acceso:</span>
+                    <span className="text-gray-700 dark:text-gray-300">
+                      {user?.metadata?.lastSignInTime ? new Date(user.metadata.lastSignInTime).toLocaleString() : 'N/A'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsUserModalOpen(false);
+                  setUserProfileMsg('');
+                  setUserProfileError('');
+                }}
+                className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-semibold hover:bg-gray-50 transition-colors cursor-pointer"
+              >
+                Cerrar
+              </button>
+              <button
+                type="button"
+                disabled={isSavingProfile}
+                onClick={handleSaveProfile}
+                className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                {isSavingProfile ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Guardando...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 size={14} />
+                    <span>Guardar Cambios</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE CONFIRMACIÓN PARA SALIR (CERRAR SESIÓN) */}
+      {isLogoutModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fadeIn">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-gray-100 dark:border-gray-700 p-6 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 mx-auto mb-4 flex items-center justify-center shadow-xs">
+              <LogOut size={26} />
+            </div>
+
+            <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-1.5">
+              ¿Deseas cerrar tu sesión?
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-6">
+              Tendrás que ingresar tu correo y contraseña nuevamente para acceder a tus categorías y enlaces guardados.
+            </p>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setIsLogoutModalOpen(false)}
+                className="flex-1 py-2.5 px-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-bold hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  setIsLogoutModalOpen(false);
+                  await signOut(auth);
+                }}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-all shadow-sm hover:shadow cursor-pointer"
+              >
+                Sí, Salir
               </button>
             </div>
           </div>
