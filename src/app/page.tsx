@@ -2371,35 +2371,10 @@ export default function LinkNestApp() {
                                 <Folder size={14} className="text-blue-500" />
                                 Subcategorías
                               </span>
-                              <span className="text-[11px] text-gray-400 font-medium">
-                                {selectedSubCategory ? 'Toca otra para cambiar' : 'Elige una subcategoría para ver sus enlaces'}
-                              </span>
                             </div>
 
                             {/* Píldoras / Botones de Subcategorías Elegantes y Ordenadas Alfabéticamente */}
                             <div className="flex flex-wrap gap-2 pt-0.5">
-                              {/* Opción General / Raíz si tiene enlaces directos */}
-                              {directLinks.length > 0 && (
-                                <button
-                                  type="button"
-                                  onClick={() => setSelectedSubCategory(selectedSubCategory === '__parent_direct__' ? null : '__parent_direct__')}
-                                  className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer border ${
-                                    selectedSubCategory === '__parent_direct__'
-                                      ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                                      : 'bg-gray-50 dark:bg-gray-750 text-gray-700 dark:text-gray-200 border-gray-200/80 dark:border-gray-700 hover:border-blue-400'
-                                  }`}
-                                >
-                                  <Folder size={13} className={selectedSubCategory === '__parent_direct__' ? 'text-white' : 'text-gray-500'} />
-                                  <span>General ({activeCatObj?.name})</span>
-                                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                                    selectedSubCategory === '__parent_direct__'
-                                      ? 'bg-blue-700 text-white'
-                                      : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
-                                  }`}>
-                                    {directLinks.length}
-                                  </span>
-                                </button>
-                              )}
 
                               {subCats
                                 .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
