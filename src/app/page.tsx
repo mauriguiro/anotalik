@@ -2573,68 +2573,68 @@ export default function LinkNestApp() {
                       </button>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-2.5">
+                    <div className="flex flex-col gap-2 max-w-3xl mx-auto">
                       {[...categories]
                         .filter(c => c.parentId === null)
                         .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }))
                         .map(cat => {
-                          const catSubCats = [...categories]
-                            .filter(c => c.parentId === cat.id)
-                            .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
                           const totalLinks = getRecursiveLinkCount(cat.id);
 
                           return (
-                            <div 
+                            <button
                               key={cat.id}
+                              type="button"
                               onClick={() => {
                                 setActiveCategory(cat.id);
                                 setSelectedSubCategory(null);
                               }}
                               style={{
-                                backgroundColor: isDarkMode ? `${cat.color}15` : `${cat.color}12`,
+                                backgroundColor: isDarkMode ? `${cat.color}15` : `${cat.color}10`,
                                 borderColor: `${cat.color}35`
                               }}
-                              className="rounded-xl border p-2.5 sm:p-3 hover:shadow-md hover:-translate-y-0.5 transition-all duration-150 cursor-pointer flex flex-col justify-between group relative overflow-hidden active:scale-[0.98]"
+                              className="w-full rounded-xl border px-3.5 py-2.5 hover:shadow-sm hover:-translate-y-0.5 transition-all duration-150 cursor-pointer flex items-center justify-between gap-3 group relative overflow-hidden active:scale-[0.99] text-left"
                             >
-                              {/* Barra superior de acento con el color original */}
+                              {/* Barra lateral de acento con el color de la categoría */}
                               <div 
-                                className="absolute top-0 left-0 right-0 h-1 transition-all group-hover:h-1.5 opacity-90"
+                                className="absolute left-0 top-0 bottom-0 w-1 group-hover:w-1.5 transition-all opacity-90"
                                 style={{ backgroundColor: cat.color }}
                               />
 
-                              {/* Fila superior: Ícono + Contador de links */}
-                              <div className="flex items-center justify-between gap-1.5 pt-0.5 mb-2">
-                                <div 
-                                  style={{ 
-                                    backgroundColor: `${cat.color}25`, 
-                                    color: cat.color 
-                                  }}
-                                  className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform"
-                                >
-                                  <DynamicIcon name={cat.iconName} size={15} />
-                                </div>
-
-                                <span 
-                                  style={{ 
-                                    color: cat.color, 
-                                    backgroundColor: `${cat.color}20` 
-                                  }}
-                                  className="text-[10px] font-bold px-1.5 py-0.5 rounded-md shrink-0"
-                                >
-                                  {totalLinks} {totalLinks === 1 ? 'link' : 'links'}
-                                </span>
+                              {/* Ícono a la izquierda */}
+                              <div 
+                                style={{ 
+                                  backgroundColor: `${cat.color}25`, 
+                                  color: cat.color 
+                                }}
+                                className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform ml-1"
+                              >
+                                <DynamicIcon name={cat.iconName} size={16} />
                               </div>
 
-                              {/* Título de la categoría centrado */}
-                              <div className="w-full text-center py-1">
+                              {/* Nombre de la categoría centrado */}
+                              <div className="flex-1 min-w-0 text-center px-2">
                                 <h3 
-                                  className="font-bold text-gray-900 dark:text-gray-100 text-xs sm:text-sm leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate text-center"
+                                  className="font-bold text-gray-900 dark:text-gray-100 text-xs sm:text-sm leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate"
                                   title={cat.name}
                                 >
                                   {cat.name}
                                 </h3>
                               </div>
-                            </div>
+
+                              {/* Cantidad de links y flecha a la derecha */}
+                              <div className="flex items-center gap-2 shrink-0">
+                                <span 
+                                  style={{ 
+                                    color: cat.color, 
+                                    backgroundColor: `${cat.color}20` 
+                                  }}
+                                  className="text-[11px] font-bold px-2 py-0.5 rounded-md"
+                                >
+                                  {totalLinks} {totalLinks === 1 ? 'link' : 'links'}
+                                </span>
+                                <ChevronRight size={14} className="text-gray-400 group-hover:text-blue-500 group-hover:translate-x-0.5 transition-all opacity-60" />
+                              </div>
+                            </button>
                           );
                         })}
                     </div>
