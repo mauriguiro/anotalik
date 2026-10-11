@@ -179,6 +179,8 @@ export default function LinkNestApp() {
   const [editLinkTags, setEditLinkTags] = useState('');
   const [activeLinkDropdown, setActiveLinkDropdown] = useState<string | null>(null);
   const [isMoveLinkModalOpen, setIsMoveLinkModalOpen] = useState(false);
+  const [isRenameLinkModalOpen, setIsRenameLinkModalOpen] = useState(false);
+  const [renameLinkTitle, setRenameLinkTitle] = useState('');
   const [isCatSelectorOpen, setIsCatSelectorOpen] = useState(false);
   const [modalExpandedCats, setModalExpandedCats] = useState<Record<string, boolean>>({});
 
@@ -660,6 +662,22 @@ export default function LinkNestApp() {
     setIsMoveLinkModalOpen(false);
   };
 
+  const openRenameLinkModal = (link: any) => {
+    setEditingLink(link);
+    setRenameLinkTitle(link.title || '');
+    setIsRenameLinkModalOpen(true);
+  };
+
+  const saveRenamedLink = async () => {
+    if (editingLink && user && renameLinkTitle.trim()) {
+      const trimmedTitle = renameLinkTitle.trim();
+      const linkRef = doc(db, 'links', editingLink.id);
+      await updateDoc(linkRef, { title: trimmedTitle });
+      setLinks(links.map(l => l.id === editingLink.id ? { ...l, title: trimmedTitle } : l));
+    }
+    setIsRenameLinkModalOpen(false);
+  };
+
   const saveEditedLink = async () => {
     if (!user) return;
     const tagsArray = editLinkTags.split(',').map(t => t.trim()).filter(t => t !== '');
@@ -761,16 +779,19 @@ export default function LinkNestApp() {
   const renderLinkCard = (link: any) => {
     const category = categories.find(c => c.id === link.categoryId);
     const isCopied = copiedLinkId === link.id;
+    const isDropdownOpen = activeLinkDropdown === link.id;
 
     return (
       <div 
         key={link.id} 
-        className="bg-white dark:bg-gray-800/90 rounded-xl border border-gray-200/80 dark:border-gray-700/80 px-3 py-2 sm:px-3.5 sm:py-2.5 hover:shadow-sm hover:border-blue-400/80 dark:hover:border-blue-500/60 transition-all duration-150 group flex flex-col justify-between relative overflow-hidden backdrop-blur-xs"
+        className={`bg-white dark:bg-gray-800/90 rounded-xl border border-gray-200/80 dark:border-gray-700/80 px-3 py-2 sm:px-3.5 sm:py-2.5 hover:shadow-sm hover:border-blue-400/80 dark:hover:border-blue-500/60 transition-all duration-150 group flex flex-col justify-between relative backdrop-blur-xs ${
+          isDropdownOpen ? 'z-30' : 'z-0'
+        }`}
       >
         {/* Indicador de categoría sutil superior */}
         {category && (
           <div 
-            className="absolute top-0 left-0 right-0 h-0.5 opacity-80"
+            className="absolute top-0 left-0 right-0 h-0.5 opacity-80 rounded-t-xl"
             style={{ backgroundColor: category.color }}
           />
         )}
@@ -900,8 +921,11 @@ export default function LinkNestApp() {
             <div className="relative">
               <button 
                 type="button"
-                onClick={() => setActiveLinkDropdown(activeLinkDropdown === link.id ? null : link.id)}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveLinkDropdown(activeLinkDropdown === link.id ? null : link.id);
+                }}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
                 title="Más opciones"
               >
                 <MoreVertical size={15} />
@@ -911,38 +935,64 @@ export default function LinkNestApp() {
                 <>
                   <div 
                     className="fixed inset-0 z-40" 
-                    onClick={() => setActiveLinkDropdown(null)} 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveLinkDropdown(null);
+                    }} 
                   />
-                  <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-50 py-1.5 overflow-hidden text-xs">
+                  <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-[60] py-1.5 overflow-hidden text-xs animate-in fade-in zoom-in-95 duration-100">
                     <button 
                       type="button"
-                      className="w-full text-left px-3.5 py-2 font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 flex items-center gap-2.5 transition-colors"
-                      onClick={(e) => { setActiveLinkDropdown(null); toggleFavoriteLink(link, e); }}
+                      className="w-full text-left px-3.5 py-2 font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 flex items-center gap-2.5 transition-colors cursor-pointer"
+                      onClick={(e) => { 
+                        e.stopPropagation();
+                        setActiveLinkDropdown(null); 
+                        openRenameLinkModal(link); 
+                      }}
                     >
-                      <Star size={13} className={link.isFavorite ? "fill-amber-400 text-amber-500" : "text-amber-500"} />
-                      {link.isFavorite ? 'Quitar favorito' : 'Marcar favorito'}
+                      <Edit2 size={13} className="text-amber-500" /> 
+                      <span>Renombrar</span>
                     </button>
+
                     <button 
                       type="button"
-                      className="w-full text-left px-3.5 py-2 font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 flex items-center gap-2.5 transition-colors"
-                      onClick={() => { setActiveLinkDropdown(null); openEditLinkModal(link); }}
+                      className="w-full text-left px-3.5 py-2 font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 flex items-center gap-2.5 transition-colors cursor-pointer"
+                      onClick={(e) => { 
+                        e.stopPropagation();
+                        setActiveLinkDropdown(null); 
+                        openMoveLinkModal(link); 
+                      }}
                     >
-                      <Edit2 size={13} className="text-blue-500" /> Editar enlace
+                      <Folder size={13} className="text-indigo-500" /> 
+                      <span>Mover de categoría</span>
                     </button>
+
                     <button 
                       type="button"
-                      className="w-full text-left px-3.5 py-2 font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 flex items-center gap-2.5 transition-colors"
-                      onClick={() => { setActiveLinkDropdown(null); openMoveLinkModal(link); }}
+                      className="w-full text-left px-3.5 py-2 font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 flex items-center gap-2.5 transition-colors cursor-pointer"
+                      onClick={(e) => { 
+                        e.stopPropagation();
+                        setActiveLinkDropdown(null); 
+                        openEditLinkModal(link); 
+                      }}
                     >
-                      <Folder size={13} className="text-indigo-500" /> Mover categoría
+                      <LucideIcons.SlidersHorizontal size={13} className="text-blue-500" /> 
+                      <span>Editar detalles</span>
                     </button>
+
                     <div className="my-1 border-t border-gray-100 dark:border-gray-700/60" />
+
                     <button 
                       type="button"
-                      className="w-full text-left px-3.5 py-2 font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2.5 transition-colors"
-                      onClick={() => { setActiveLinkDropdown(null); deleteLink(link.id); }}
+                      className="w-full text-left px-3.5 py-2 font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2.5 transition-colors cursor-pointer"
+                      onClick={(e) => { 
+                        e.stopPropagation();
+                        setActiveLinkDropdown(null); 
+                        deleteLink(link.id); 
+                      }}
                     >
-                      <Trash2 size={13} /> Eliminar
+                      <Trash2 size={13} /> 
+                      <span>Eliminar</span>
                     </button>
                   </div>
                 </>
@@ -2793,15 +2843,15 @@ export default function LinkNestApp() {
                           {hasChildren && isExpanded && (
                             <div className="bg-gray-50 dark:bg-gray-800/40 py-1">
                               <div 
-                                className={`flex items-center gap-2 pl-9 pr-3 py-1 text-xs cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 ${editLinkCat === cat.id ? 'text-blue-600 font-medium' : 'text-gray-500 dark:text-gray-400'}`}
+                                className={`flex items-center gap-2 pl-9 pr-3 py-1.5 text-xs cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 ${editLinkCat === cat.id ? 'text-blue-600 font-semibold bg-blue-50/50 dark:bg-blue-900/20' : 'text-gray-500 dark:text-gray-400'}`}
                                 onClick={() => { setEditLinkCat(cat.id); setIsCatSelectorOpen(false); }}
                               >
-                                ? Ninguna
+                                <span>Directo en {cat.name} (General)</span>
                               </div>
                               {categories.filter(c => c.parentId === cat.id).map(sub => (
                                 <div 
                                   key={sub.id}
-                                  className={`flex items-center gap-2 pl-9 pr-3 py-1 text-xs cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 ${editLinkCat === sub.id ? 'text-blue-600 font-medium' : 'text-gray-600 dark:text-gray-300'}`}
+                                  className={`flex items-center gap-2 pl-9 pr-3 py-1.5 text-xs cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 ${editLinkCat === sub.id ? 'text-blue-600 font-semibold bg-blue-50/50 dark:bg-blue-900/20' : 'text-gray-600 dark:text-gray-300'}`}
                                   onClick={() => { setEditLinkCat(sub.id); setIsCatSelectorOpen(false); }}
                                 >
                                   <span style={{ color: sub.color }}><DynamicIcon name={sub.iconName} size={12} /></span>
@@ -2827,11 +2877,71 @@ export default function LinkNestApp() {
               </button>
               <button 
                 onClick={saveMovedLink}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm cursor-pointer"
               >
                 Guardar
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Renombrar Enlace */}
+      {isRenameLinkModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-[100] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700 animate-in fade-in zoom-in-95 duration-150">
+            <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50/60 dark:bg-gray-850">
+              <h2 className="font-bold text-gray-800 dark:text-white flex items-center gap-2 text-sm sm:text-base">
+                <Edit2 size={16} className="text-amber-500" />
+                Renombrar Enlace
+              </h2>
+              <button 
+                onClick={() => setIsRenameLinkModalOpen(false)} 
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            
+            <form onSubmit={(e) => { e.preventDefault(); saveRenamedLink(); }} className="p-4 space-y-3.5">
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5">
+                  Nuevo título del enlace:
+                </label>
+                <input 
+                  type="text" 
+                  value={renameLinkTitle}
+                  onChange={(e) => setRenameLinkTitle(e.target.value)}
+                  placeholder="Escribe el nombre del enlace..."
+                  autoFocus
+                  required
+                  className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-xl text-xs sm:text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
+                />
+              </div>
+
+              {editingLink && (
+                <div className="text-[11px] text-gray-400 font-mono truncate bg-gray-50 dark:bg-gray-900/60 p-2 rounded-lg border border-gray-100 dark:border-gray-800">
+                  {editingLink.url}
+                </div>
+              )}
+
+              <div className="pt-2 flex justify-end gap-2 border-t border-gray-100 dark:border-gray-700">
+                <button 
+                  type="button"
+                  onClick={() => setIsRenameLinkModalOpen(false)}
+                  className="px-3.5 py-1.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit"
+                  disabled={!renameLinkTitle.trim()}
+                  className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
+                >
+                  Guardar
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
