@@ -1427,7 +1427,7 @@ export default function LinkNestApp() {
 
           {/* Firma CAELUM */}
           <div className="mt-8 pt-4 border-t border-gray-100 dark:border-gray-700/80 text-center">
-            <p className="text-[11px] font-semibold tracking-wider text-gray-400 dark:text-gray-500 uppercase">
+            <p className="text-[11px] font-medium tracking-wide text-gray-400 dark:text-gray-500">
               By CAELUM. Bussines group. Software / Labs
             </p>
           </div>
@@ -2753,7 +2753,7 @@ export default function LinkNestApp() {
 
           {/* Firma CAELUM Sutil en la Pantalla Principal */}
           <footer className="mt-12 pt-6 pb-4 border-t border-gray-200/60 dark:border-gray-800 text-center select-none">
-            <p className="text-[10px] sm:text-[11px] font-medium tracking-wider text-gray-400 dark:text-gray-500 uppercase">
+            <p className="text-[11px] font-medium tracking-wide text-gray-400 dark:text-gray-500">
               By CAELUM. Bussines group. Software / Labs
             </p>
           </footer>
