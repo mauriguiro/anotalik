@@ -1611,7 +1611,7 @@ export default function LinkNestApp() {
             </button>
 
             <div className="relative w-full max-w-md flex-1 group">
-              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none text-blue-500 transition-colors group-focus-within:text-blue-600">
+              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none text-amber-500 transition-colors group-focus-within:text-amber-600">
                 <Search size={17} strokeWidth={2.2} />
               </div>
               <input 
@@ -1619,7 +1619,7 @@ export default function LinkNestApp() {
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Buscar enlaces, etiquetas o categorías..." 
-                className="w-full pl-10 pr-9 py-2.5 bg-blue-50/50 dark:bg-gray-800/90 border-2 border-blue-200/80 dark:border-blue-900/60 rounded-xl text-sm font-medium text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 dark:focus:border-blue-400 focus:bg-white dark:focus:bg-gray-900 focus:ring-4 focus:ring-blue-500/15 outline-none transition-all shadow-xs"
+                className="w-full pl-10 pr-9 py-2 bg-amber-50/40 dark:bg-gray-800/90 border-2 border-amber-400/80 dark:border-amber-500/70 rounded-xl text-sm font-medium text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-amber-500 dark:focus:border-amber-400 focus:bg-white dark:focus:bg-gray-900 focus:ring-2 focus:ring-amber-400/20 outline-none transition-all shadow-2xs"
               />
               {searchQuery && (
                 <button
@@ -1657,17 +1657,17 @@ export default function LinkNestApp() {
         <div className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
           
           {/* Add New Link Bar */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border-2 border-amber-400/80 dark:border-amber-500/70 p-3 sm:p-4 mb-6 transition-all ring-1 ring-amber-400/20">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200/90 dark:border-gray-700/80 p-3 sm:p-4 mb-6 transition-all">
             <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3">
               <div className="flex-1 relative">
-                <LinkIcon className={`absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors ${newLinkUrl.trim() ? 'text-amber-500' : 'text-gray-400 dark:text-gray-500'}`} size={18} />
+                <LinkIcon className={`absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors ${newLinkUrl.trim() ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'}`} size={18} />
                 <input 
                   type="text" 
                   value={newLinkUrl}
                   onChange={(e) => setNewLinkUrl(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && saveNewLink()}
                   placeholder="Pega un enlace aquí para guardarlo rápidamente (ej. https://...)..." 
-                  className={`w-full pl-10 ${newLinkUrl ? 'pr-10' : 'pr-4'} py-3 bg-gray-50 dark:bg-gray-900/70 border border-amber-200/60 dark:border-amber-800/50 rounded-xl text-sm text-gray-900 dark:text-white font-medium placeholder-gray-400 dark:placeholder-gray-500 focus:border-amber-500 dark:focus:border-amber-400 focus:bg-white dark:focus:bg-gray-900 focus:ring-2 focus:ring-amber-400/20 outline-none transition-all`}
+                  className={`w-full pl-10 ${newLinkUrl ? 'pr-10' : 'pr-4'} py-3 bg-gray-50 dark:bg-gray-900/70 border border-gray-200 dark:border-gray-700/80 rounded-xl text-sm text-gray-900 dark:text-white font-medium placeholder-gray-400 dark:placeholder-gray-500 focus:border-blue-500 dark:focus:border-blue-400 focus:bg-white dark:focus:bg-gray-900 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30 outline-none transition-all`}
                 />
                 {newLinkUrl && (
                   <button
