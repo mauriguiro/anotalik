@@ -2573,7 +2573,7 @@ export default function LinkNestApp() {
                       </button>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 sm:gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-2.5">
                       {[...categories]
                         .filter(c => c.parentId === null)
                         .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }))
@@ -2594,7 +2594,7 @@ export default function LinkNestApp() {
                                 backgroundColor: isDarkMode ? `${cat.color}15` : `${cat.color}12`,
                                 borderColor: `${cat.color}35`
                               }}
-                              className="rounded-xl border p-2.5 sm:p-3 hover:shadow-md hover:-translate-y-0.5 transition-all duration-150 cursor-pointer flex flex-col justify-between group relative overflow-hidden active:scale-[0.98]"
+                              className="rounded-xl border px-2.5 py-2 hover:shadow-sm hover:-translate-y-0.5 transition-all duration-150 cursor-pointer flex flex-col justify-between group relative overflow-hidden active:scale-[0.98]"
                             >
                               {/* Barra superior de acento con el color original */}
                               <div 
@@ -2602,45 +2602,31 @@ export default function LinkNestApp() {
                                 style={{ backgroundColor: cat.color }}
                               />
 
-                              {/* Fila superior compacta: Ícono + Nombre */}
-                              <div className="pt-0.5">
-                                <div className="flex items-center justify-between gap-1.5 mb-1.5">
-                                  <div 
-                                    style={{ 
-                                      backgroundColor: `${cat.color}25`, 
-                                      color: cat.color 
-                                    }}
-                                    className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform"
-                                  >
-                                    <DynamicIcon name={cat.iconName} size={15} />
-                                  </div>
+                              {/* Fila principal en una sola línea compacta: Ícono + Nombre + Contador */}
+                              <div className="flex items-center gap-2 pt-0.5 min-w-0">
+                                <div 
+                                  style={{ 
+                                    backgroundColor: `${cat.color}25`, 
+                                    color: cat.color 
+                                  }}
+                                  className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform"
+                                >
+                                  <DynamicIcon name={cat.iconName} size={15} />
+                                </div>
 
-                                  <span 
-                                    style={{ 
-                                      color: cat.color, 
-                                      backgroundColor: `${cat.color}20` 
-                                    }}
-                                    className="text-[10px] font-bold px-1.5 py-0.2 rounded-md shrink-0"
+                                <div className="min-w-0 flex-1">
+                                  <h3 
+                                    className="font-bold text-gray-900 dark:text-gray-100 text-xs sm:text-sm leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate"
+                                    title={cat.name}
                                   >
-                                    {totalLinks} {totalLinks === 1 ? 'link' : 'links'}
+                                    {cat.name}
+                                  </h3>
+                                  <span className="text-[10px] text-gray-500 dark:text-gray-400 font-medium leading-none block truncate">
+                                    {catSubCats.length > 0 ? `${catSubCats.length} sub` : 'directo'} • {totalLinks} {totalLinks === 1 ? 'link' : 'links'}
                                   </span>
                                 </div>
 
-                                {/* Nombre de la categoría optimizado sin espacios de sobra */}
-                                <h3 
-                                  className="font-bold text-gray-900 dark:text-gray-100 text-xs sm:text-sm leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate"
-                                  title={cat.name}
-                                >
-                                  {cat.name}
-                                </h3>
-                              </div>
-
-                              {/* Pie de tarjeta compacto */}
-                              <div className="pt-1.5 mt-2 border-t border-black/5 dark:border-white/10 flex items-center justify-between text-[10px] font-medium text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-100 transition-colors">
-                                <span className="truncate">
-                                  {catSubCats.length > 0 ? `${catSubCats.length} subcat${catSubCats.length > 1 ? 's' : ''}` : 'Directo'}
-                                </span>
-                                <ChevronRight size={12} className="transform group-hover:translate-x-0.5 transition-transform opacity-70 shrink-0" />
+                                <ChevronRight size={13} className="text-gray-400 group-hover:text-blue-500 group-hover:translate-x-0.5 transition-all shrink-0 opacity-60" />
                               </div>
                             </div>
                           );
