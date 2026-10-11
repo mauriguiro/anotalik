@@ -2220,7 +2220,7 @@ export default function LinkNestApp() {
                       </button>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5 sm:gap-4">
+                    <div className="grid grid-cols-1 gap-3 sm:gap-3.5">
                       {links.filter(l => l.isFavorite).map(link => renderLinkCard(link))}
                     </div>
                   )}
@@ -2532,7 +2532,7 @@ export default function LinkNestApp() {
                                 </button>
                               </div>
                             ) : (
-                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5 sm:gap-4">
+                              <div className="grid grid-cols-1 gap-3 sm:gap-3.5">
                                 {displayLinks.map(link => renderLinkCard(link))}
                               </div>
                             )}
@@ -2573,7 +2573,7 @@ export default function LinkNestApp() {
                       </button>
                     </div>
                   ) : (
-                    <div className="flex flex-col gap-2 max-w-3xl mx-auto">
+                    <div className="flex flex-col gap-2.5 w-full">
                       {[...categories]
                         .filter(c => c.parentId === null)
                         .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }))
