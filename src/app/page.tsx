@@ -982,7 +982,7 @@ export default function LinkNestApp() {
     }
 
     return (
-      <div className="space-y-1.5 py-1">
+      <div className="space-y-1 py-1">
         {rootCats.map(cat => {
           const subCats = categories.filter(c => c.parentId === cat.id);
           const isExpanded = expandedCategories[cat.id];
@@ -991,14 +991,14 @@ export default function LinkNestApp() {
           return (
             <div 
               key={cat.id} 
-              className={`rounded-xl border transition-all ${
+              className={`rounded-lg border transition-all ${
                 isCatSelected 
-                  ? 'border-blue-200 dark:border-blue-800 bg-blue-50/60 dark:bg-blue-900/20 shadow-2xs' 
-                  : 'border-transparent hover:border-gray-200 dark:hover:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                  ? 'border-blue-300/80 dark:border-blue-700 bg-blue-50/70 dark:bg-blue-900/30' 
+                  : 'border-transparent hover:border-gray-200 dark:hover:border-gray-800 hover:bg-gray-100/60 dark:hover:bg-gray-800/40'
               }`}
             >
-              {/* Category row */}
-              <div className="flex items-center justify-between p-2 gap-1.5 relative">
+              {/* Fila compacta de categoría principal */}
+              <div className="flex items-center justify-between px-2 py-1.5 gap-1.5 relative">
                 <button
                   type="button"
                   onClick={() => {
@@ -1008,42 +1008,44 @@ export default function LinkNestApp() {
                     if (subCats.length > 0 && !isExpanded) {
                       setExpandedCategories(prev => ({ ...prev, [cat.id]: true }));
                     }
-                    setIsSidebarOpen(false);
+                    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                      setIsSidebarOpen(false);
+                    }
                   }}
-                  className="flex items-center gap-2.5 flex-1 min-w-0 text-left group"
+                  className="flex items-center gap-2 flex-1 min-w-0 text-left group"
                 >
                   <div 
                     style={{ backgroundColor: `${cat.color}15`, color: cat.color }} 
-                    className="p-1.5 rounded-lg flex-shrink-0 transition-transform group-hover:scale-105"
+                    className="w-6 h-6 rounded-md flex items-center justify-center shrink-0 transition-transform group-hover:scale-105"
                   >
-                    <DynamicIcon name={cat.iconName} size={15} />
+                    <DynamicIcon name={cat.iconName} size={13} />
                   </div>
-                  <div className="flex flex-col min-w-0">
+                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
                     <span className="text-xs font-semibold text-gray-800 dark:text-gray-200 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                       {cat.name}
                     </span>
                     {subCats.length > 0 && (
-                      <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">
-                        {subCats.length} subcat{subCats.length > 1 ? 's' : ''}
+                      <span className="text-[10px] px-1 py-0.2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 font-medium shrink-0">
+                        {subCats.length}
                       </span>
                     )}
                   </div>
                 </button>
 
                 <div className="flex items-center gap-0.5">
-                  {/* Expand/Collapse chevron if it has subcategories */}
+                  {/* Desplegable chevron */}
                   {subCats.length > 0 && (
                     <button
                       type="button"
                       onClick={(e) => toggleExpand(cat.id, e)}
-                      className="p-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-lg hover:bg-gray-200/70 dark:hover:bg-gray-700 transition-colors"
+                      className="p-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-md hover:bg-gray-200/60 dark:hover:bg-gray-700 transition-colors"
                       title={isExpanded ? "Ocultar subcategorías" : "Ver subcategorías"}
                     >
-                      {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                      {isExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
                     </button>
                   )}
 
-                  {/* 3-dots Menu for Root Category */}
+                  {/* Menú de 3 puntos */}
                   <div className="relative">
                     <button
                       type="button"
@@ -1051,10 +1053,10 @@ export default function LinkNestApp() {
                         e.stopPropagation();
                         setActiveSidebarDropdown(activeSidebarDropdown === cat.id ? null : cat.id);
                       }}
-                      className="p-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-lg hover:bg-gray-200/70 dark:hover:bg-gray-700 transition-colors"
-                      title="Opciones de categoría"
+                      className="p-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-md hover:bg-gray-200/60 dark:hover:bg-gray-700 transition-colors"
+                      title="Opciones"
                     >
-                      <MoreVertical size={14} />
+                      <MoreVertical size={13} />
                     </button>
 
                     {activeSidebarDropdown === cat.id && (
@@ -1063,7 +1065,7 @@ export default function LinkNestApp() {
                           className="fixed inset-0 z-40" 
                           onClick={() => setActiveSidebarDropdown(null)} 
                         />
-                        <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 py-1.5 z-50 text-xs">
+                        <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 py-1.5 z-50 text-xs">
                           <button
                             type="button"
                             onClick={() => {
@@ -1072,7 +1074,7 @@ export default function LinkNestApp() {
                             }}
                             className="w-full text-left px-3 py-1.5 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium flex items-center gap-2 transition-colors"
                           >
-                            <Plus size={14} /> Agregar subcategoría
+                            <Plus size={13} /> Agregar subcategoría
                           </button>
                           <button
                             type="button"
@@ -1082,7 +1084,7 @@ export default function LinkNestApp() {
                             }}
                             className="w-full text-left px-3 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 font-medium flex items-center gap-2 transition-colors"
                           >
-                            <Edit2 size={14} className="text-gray-500" /> Editar categoría
+                            <Edit2 size={13} className="text-gray-500" /> Editar categoría
                           </button>
                           <div className="my-1 border-t border-gray-100 dark:border-gray-700" />
                           <button
@@ -1093,7 +1095,7 @@ export default function LinkNestApp() {
                             }}
                             className="w-full text-left px-3 py-1.5 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 font-medium flex items-center gap-2 transition-colors"
                           >
-                            <Trash2 size={14} /> Eliminar categoría
+                            <Trash2 size={13} /> Eliminar categoría
                           </button>
                         </div>
                       </>
@@ -1102,18 +1104,18 @@ export default function LinkNestApp() {
                 </div>
               </div>
 
-              {/* Subcategories list */}
+              {/* Lista compacta y delicada de subcategorías */}
               {subCats.length > 0 && isExpanded && (
-                <div className="pl-4 pr-1 pb-1.5 pt-0.5 space-y-1 border-l-2 border-gray-100 dark:border-gray-800 ml-4 mb-1">
+                <div className="pl-3 pr-1 pb-1 pt-0.5 space-y-0.5 border-l-2 border-blue-200/50 dark:border-blue-900/40 ml-4 mb-1">
                   {subCats.map(sub => {
                     const isSubSelected = activeCategory === cat.id && selectedSubCategory === sub.id;
 
                     return (
                       <div
                         key={sub.id}
-                        className={`flex items-center justify-between p-1.5 rounded-lg transition-all ${
+                        className={`flex items-center justify-between px-2 py-1 rounded-md transition-all ${
                           isSubSelected
-                            ? 'bg-blue-100/70 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-semibold'
+                            ? 'bg-blue-100/80 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-semibold'
                             : 'hover:bg-gray-100 dark:hover:bg-gray-800/70 text-gray-600 dark:text-gray-400'
                         }`}
                       >
@@ -1123,17 +1125,18 @@ export default function LinkNestApp() {
                             setActiveCategory(cat.id);
                             setSelectedSubCategory(sub.id);
                             setMainTab('categories');
-                            setIsSidebarOpen(false);
+                            if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                              setIsSidebarOpen(false);
+                            }
                           }}
                           className="flex items-center gap-2 flex-1 min-w-0 text-left"
                         >
-                          <div style={{ color: sub.color }} className="flex-shrink-0">
-                            <DynamicIcon name={sub.iconName} size={13} />
+                          <div style={{ color: sub.color }} className="shrink-0">
+                            <DynamicIcon name={sub.iconName} size={12} />
                           </div>
                           <span className="text-xs truncate">{sub.name}</span>
                         </button>
 
-                        {/* 3-dots Menu for Subcategory */}
                         <div className="relative">
                           <button
                             type="button"
@@ -1141,10 +1144,10 @@ export default function LinkNestApp() {
                               e.stopPropagation();
                               setActiveSidebarDropdown(activeSidebarDropdown === sub.id ? null : sub.id);
                             }}
-                            className="p-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-md hover:bg-gray-200/60 dark:hover:bg-gray-700 transition-colors"
-                            title="Opciones de subcategoría"
+                            className="p-0.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-md hover:bg-gray-200/60 dark:hover:bg-gray-700 transition-colors"
+                            title="Opciones"
                           >
-                            <MoreVertical size={13} />
+                            <MoreVertical size={12} />
                           </button>
 
                           {activeSidebarDropdown === sub.id && (
@@ -1776,9 +1779,9 @@ export default function LinkNestApp() {
             </div>
           ) : (
             <div>
-              {/* Pestañas de la Pantalla Principal y Acciones */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-3 border-b border-gray-200 dark:border-gray-800">
-                <div className="flex items-center gap-2">
+              {/* Pestañas de la Pantalla Principal */}
+              <div className="flex items-center justify-between gap-3 mb-5 pb-2.5 border-b border-gray-200/80 dark:border-gray-800">
+                <div className="flex items-center gap-1.5">
                   <button
                     type="button"
                     onClick={() => {
@@ -1786,18 +1789,18 @@ export default function LinkNestApp() {
                       setActiveCategory(null);
                       setSelectedSubCategory(null);
                     }}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all cursor-pointer ${
+                    className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl font-semibold text-xs transition-all cursor-pointer ${
                       mainTab === 'categories' && activeCategory === null
-                        ? 'bg-blue-600 text-white shadow-sm'
-                        : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/60 border border-gray-200 dark:border-gray-700'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-750 border border-gray-200/80 dark:border-gray-700/80'
                     }`}
                   >
-                    <Folder size={17} />
+                    <Folder size={14} />
                     <span>Categorías</span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
                       mainTab === 'categories' && activeCategory === null
                         ? 'bg-blue-700 text-white' 
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
                     }`}>
                       {categories.filter(c => c.parentId === null).length}
                     </span>
@@ -1810,42 +1813,21 @@ export default function LinkNestApp() {
                       setActiveCategory(null);
                       setSelectedSubCategory(null);
                     }}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all cursor-pointer ${
+                    className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl font-semibold text-xs transition-all cursor-pointer ${
                       mainTab === 'favorites'
-                        ? 'bg-amber-500 text-white shadow-sm'
-                        : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/60 border border-gray-200 dark:border-gray-700'
+                        ? 'bg-amber-500 text-white shadow-xs'
+                        : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-750 border border-gray-200/80 dark:border-gray-700/80'
                     }`}
                   >
-                    <Star size={17} className={mainTab === 'favorites' ? 'fill-white text-white' : 'fill-amber-400 text-amber-500'} />
+                    <Star size={14} className={mainTab === 'favorites' ? 'fill-white text-white' : 'fill-amber-400 text-amber-500'} />
                     <span>Favoritos</span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
                       mainTab === 'favorites' 
                         ? 'bg-amber-600 text-white' 
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
                     }`}>
                       {links.filter(l => l.isFavorite).length}
                     </span>
-                  </button>
-                </div>
-
-                {/* Acciones Rápidas */}
-                <div className="flex items-center gap-2 self-start sm:self-auto">
-                  <button
-                    type="button"
-                    onClick={() => setIsManageCatsModalOpen(true)}
-                    className="px-3.5 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-xl transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer"
-                  >
-                    <LucideIcons.Settings size={14} className="text-gray-500 dark:text-gray-400" />
-                    <span>Gestionar</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => openAddCategoryModal(null)}
-                    className="px-3.5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all flex items-center gap-1.5 shadow-sm hover:shadow cursor-pointer"
-                  >
-                    <Plus size={15} />
-                    <span>Nueva Categoría</span>
                   </button>
                 </div>
               </div>
@@ -2335,25 +2317,25 @@ export default function LinkNestApp() {
                             )}
                           </nav>
 
-                          {/* Banner de la Categoría Principal */}
-                          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200/90 dark:border-gray-700/80 p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <div className="flex items-center gap-3.5">
+                          {/* Banner compacto y elegante de la Categoría Principal */}
+                          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200/80 dark:border-gray-750 p-3 sm:p-4 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div className="flex items-center gap-3">
                               <div
-                                style={{ backgroundColor: `${activeCatObj?.color || '#3b82f6'}18`, color: activeCatObj?.color || '#3b82f6' }}
-                                className="w-13 h-13 rounded-2xl flex items-center justify-center shrink-0 shadow-xs"
+                                style={{ backgroundColor: `${activeCatObj?.color || '#3b82f6'}15`, color: activeCatObj?.color || '#3b82f6' }}
+                                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-2xs"
                               >
-                                <DynamicIcon name={activeCatObj?.iconName || 'Folder'} size={24} />
+                                <DynamicIcon name={activeCatObj?.iconName || 'Folder'} size={20} />
                               </div>
                               <div>
-                                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
+                                <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-gray-100">
                                   {activeCatObj?.name || 'Categoría'}
                                 </h2>
-                                <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-gray-400 font-medium">
-                                  <span>{getRecursiveLinkCount(activeCategory)} {getRecursiveLinkCount(activeCategory) === 1 ? 'enlace total' : 'enlaces totales'}</span>
+                                <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 font-medium">
+                                  <span>{getRecursiveLinkCount(activeCategory)} {getRecursiveLinkCount(activeCategory) === 1 ? 'enlace' : 'enlaces'}</span>
                                   {subCats.length > 0 && (
                                     <>
                                       <span>•</span>
-                                      <span className="text-blue-600 dark:text-blue-400 font-semibold">{subCats.length} {subCats.length === 1 ? 'subcategoría' : 'subcategorías'}</span>
+                                      <span className="text-blue-600 dark:text-blue-400">{subCats.length} subcat{subCats.length > 1 ? 's' : ''}</span>
                                     </>
                                   )}
                                 </div>
@@ -2367,61 +2349,35 @@ export default function LinkNestApp() {
                                   setActiveCategory(null);
                                   setSelectedSubCategory(null);
                                 }}
-                                className="px-3.5 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white bg-gray-100 dark:bg-gray-700/70 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer"
+                                className="px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-650 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
                               >
-                                <LucideIcons.ArrowLeft size={14} /> Volver a categorías
+                                <LucideIcons.ArrowLeft size={13} /> Volver
                               </button>
                               <button
                                 type="button"
                                 onClick={() => openAddCategoryModal(activeCategory)}
-                                className="px-3.5 py-2 text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-xl transition-colors flex items-center gap-1.5 border border-blue-200/60 dark:border-blue-800/40 cursor-pointer"
+                                className="px-3 py-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg transition-colors flex items-center gap-1 border border-blue-200/60 dark:border-blue-800/40 cursor-pointer"
                               >
-                                <Plus size={14} /> Subcategoría
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setEditingLink(null);
-                                  setEditLinkUrl('');
-                                  setEditLinkTitle('');
-                                  setEditLinkDesc('');
-                                  setEditLinkCat(activeTargetCatId);
-                                  setEditLinkTags('');
-                                  setIsLinkModalOpen(true);
-                                }}
-                                className="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
-                              >
-                                <Plus size={14} strokeWidth={2.5} /> Guardar enlace
+                                <Plus size={13} /> Subcategoría
                               </button>
                             </div>
                           </div>
                         </div>
 
-                        {/* DESPLIEGUE DE SUBCATEGORÍAS */}
+                        {/* DESPLIEGUE DE SUBCATEGORÍAS DELICADAS Y MINIMALISTAS */}
                         {subCats.length > 0 && (
-                          <div className="space-y-3">
+                          <div className="space-y-2.5">
                             <div className="flex items-center justify-between">
-                              <div>
-                                <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
-                                  <Folder size={15} className="text-blue-500" />
-                                  Subcategorías en {activeCatObj?.name}
-                                </h3>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                  Toca una tarjeta de subcategoría para desplegar sus enlaces:
-                                </p>
-                              </div>
-
-                              <button
-                                type="button"
-                                onClick={() => openAddCategoryModal(activeCategory)}
-                                className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-                              >
-                                <Plus size={14} /> Agregar subcategoría
-                              </button>
+                              <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                                Subcategorías
+                              </span>
+                              <span className="text-[11px] text-gray-400">
+                                Selecciona una para ver sus links
+                              </span>
                             </div>
 
-                            {/* Cuadrícula de tarjetas de subcategorías */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-3.5">
+                            {/* Cuadrícula compacta de tarjetas de subcategorías */}
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5">
                               {subCats.map(sub => {
                                 const isSelected = selectedSubCategory === sub.id;
                                 const subLinksCount = links.filter(l => l.categoryId === sub.id).length;
@@ -2434,100 +2390,77 @@ export default function LinkNestApp() {
                                       borderColor: isSelected ? sub.color : undefined,
                                       backgroundColor: isSelected ? `${sub.color}10` : undefined
                                     }}
-                                    className={`rounded-2xl border p-4 cursor-pointer transition-all duration-200 flex flex-col justify-between group relative ${
+                                    className={`rounded-xl border p-2.5 cursor-pointer transition-all duration-150 flex flex-col justify-between group ${
                                       isSelected
-                                        ? 'shadow-md border-2 ring-2 ring-offset-1 dark:ring-offset-gray-900 ring-blue-500/20'
-                                        : 'bg-white dark:bg-gray-800 border-gray-200/90 dark:border-gray-700/80 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-xs'
+                                        ? 'shadow-xs border-2'
+                                        : 'bg-white dark:bg-gray-800 border-gray-200/70 dark:border-gray-750 hover:border-blue-300 dark:hover:border-blue-700'
                                     }`}
                                   >
-                                    <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center justify-between mb-2">
                                       <div 
-                                        style={{ backgroundColor: `${sub.color}20`, color: sub.color }}
-                                        className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-2xs"
+                                        style={{ backgroundColor: `${sub.color}18`, color: sub.color }}
+                                        className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-2xs"
                                       >
-                                        <DynamicIcon name={sub.iconName} size={18} />
+                                        <DynamicIcon name={sub.iconName} size={14} />
                                       </div>
 
-                                      <div className="flex items-center gap-1">
-                                        {isSelected && (
-                                          <span 
-                                            style={{ backgroundColor: sub.color }}
-                                            className="w-5 h-5 rounded-full text-white flex items-center justify-center shadow-xs"
-                                            title="Subcategoría activa"
-                                          >
-                                            <Check size={12} strokeWidth={3} />
-                                          </span>
-                                        )}
-                                        <button
-                                          type="button"
-                                          onClick={(e) => { e.stopPropagation(); openEditCategoryModal(sub); }}
-                                          className="p-1 text-gray-400 hover:text-blue-600 rounded-lg transition-colors opacity-60 hover:opacity-100"
-                                          title="Editar subcategoría"
+                                      {isSelected ? (
+                                        <span 
+                                          style={{ backgroundColor: sub.color }}
+                                          className="w-4 h-4 rounded-full text-white flex items-center justify-center text-[10px]"
+                                          title="Activo"
                                         >
-                                          <Edit2 size={13} />
-                                        </button>
-                                      </div>
+                                          ✓
+                                        </span>
+                                      ) : (
+                                        <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-gray-100 dark:bg-gray-750 text-gray-400">
+                                          {subLinksCount}
+                                        </span>
+                                      )}
                                     </div>
 
                                     <div>
-                                      <h4 className={`text-sm font-bold truncate mb-1.5 ${isSelected ? 'text-gray-950 dark:text-white font-extrabold' : 'text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400'}`}>
+                                      <h4 className="text-xs font-semibold text-gray-800 dark:text-gray-200 truncate">
                                         {sub.name}
                                       </h4>
-                                      <div className="flex items-center justify-between">
-                                        <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full inline-block ${
-                                          isSelected 
-                                            ? 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-2xs' 
-                                            : 'bg-gray-100 dark:bg-gray-700/70 text-gray-500 dark:text-gray-400'
-                                        }`}>
-                                          {subLinksCount} {subLinksCount === 1 ? 'enlace' : 'enlaces'}
-                                        </span>
-                                        <span className={`text-[11px] font-medium flex items-center gap-0.5 ${isSelected ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-gray-400 group-hover:text-blue-500'}`}>
-                                          {isSelected ? 'Activo' : 'Ver links →'}
-                                        </span>
-                                      </div>
                                     </div>
                                   </div>
-                                );
+                                 );
                               })}
+                            </div>
+                          </div>
+                        )}
 
                               {/* Opción adicional para enlaces directos en la categoría padre si existen */}
                               {directLinks.length > 0 && (
                                 <div
                                   onClick={() => setSelectedSubCategory('__parent_direct__')}
-                                  className={`rounded-2xl border p-4 cursor-pointer transition-all duration-200 flex flex-col justify-between group ${
+                                  className={`rounded-xl border p-2.5 cursor-pointer transition-all duration-150 flex flex-col justify-between group ${
                                     selectedSubCategory === '__parent_direct__'
-                                      ? 'bg-blue-50/70 dark:bg-blue-900/30 border-blue-500 border-2 shadow-md'
+                                      ? 'bg-blue-50/70 dark:bg-blue-900/30 border-blue-500 border-2 shadow-xs'
                                       : 'bg-white dark:bg-gray-800 border-dashed border-gray-300 dark:border-gray-700 hover:border-blue-400'
                                   }`}
                                 >
-                                  <div className="flex items-center justify-between mb-3">
-                                    <div className="w-9 h-9 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center justify-center shrink-0">
-                                      <Folder size={18} />
+                                  <div className="flex items-center justify-between mb-2">
+                                    <div className="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center justify-center shrink-0">
+                                      <Folder size={14} />
                                     </div>
                                     {selectedSubCategory === '__parent_direct__' && (
-                                      <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-xs">
-                                        <Check size={12} strokeWidth={3} />
+                                      <span className="w-4 h-4 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px]">
+                                        ✓
                                       </span>
                                     )}
                                   </div>
                                   <div>
-                                    <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 truncate mb-1.5">
+                                    <h4 className="text-xs font-semibold text-gray-800 dark:text-gray-200 truncate">
                                       General ({activeCatObj?.name})
                                     </h4>
-                                    <div className="flex items-center justify-between">
-                                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700/70 text-gray-500 dark:text-gray-400">
-                                        {directLinks.length} {directLinks.length === 1 ? 'enlace directo' : 'enlaces directos'}
-                                      </span>
-                                      <span className="text-[11px] font-medium text-gray-400 group-hover:text-blue-500">
-                                        Ver links →
-                                      </span>
+                                    <div className="text-[10px] text-gray-400 mt-0.5">
+                                      {directLinks.length} directo{directLinks.length === 1 ? '' : 's'}
                                     </div>
                                   </div>
                                 </div>
                               )}
-                            </div>
-                          </div>
-                        )}
 
                         {/* SECCIÓN DE ENLACES SELECCIONADOS */}
                         {subCats.length > 0 && selectedSubCategory === null ? (
@@ -2649,22 +2582,22 @@ export default function LinkNestApp() {
                   </div>
 
                   {categories.filter(c => c.parentId === null).length === 0 ? (
-                    <div className="py-14 text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 p-8 shadow-xs">
-                      <Folder size={48} className="mx-auto mb-3 opacity-20 text-blue-500" />
-                      <p className="font-bold text-base mb-1 text-gray-800 dark:text-gray-200">No hay categorías creadas aún</p>
-                      <p className="text-xs text-gray-400 mb-5 max-w-sm mx-auto">
-                        Crea tu primera categoría para empezar a organizar tus enlaces y subcategorías de forma rápida.
+                    <div className="py-12 text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800/80 rounded-2xl border border-dashed border-gray-200 dark:border-gray-800 p-6 shadow-2xs">
+                      <Folder size={36} className="mx-auto mb-2 opacity-20 text-blue-500" />
+                      <p className="font-semibold text-sm mb-1 text-gray-800 dark:text-gray-200">No hay categorías aún</p>
+                      <p className="text-xs text-gray-400 mb-4 max-w-xs mx-auto">
+                        Crea una categoría desde el menú lateral para organizar tus enlaces.
                       </p>
                       <button
                         type="button"
                         onClick={() => openAddCategoryModal(null)}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-colors inline-flex items-center gap-1.5 shadow-sm cursor-pointer"
+                        className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold transition-colors inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
                       >
-                        <Plus size={15} /> Crear Primera Categoría
+                        <Plus size={14} /> Nueva Categoría
                       </button>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
                       {categories.filter(c => c.parentId === null).map(cat => {
                         const catSubCats = categories.filter(c => c.parentId === cat.id);
                         const totalLinks = getRecursiveLinkCount(cat.id);
@@ -2676,70 +2609,41 @@ export default function LinkNestApp() {
                               setActiveCategory(cat.id);
                               setSelectedSubCategory(null);
                             }}
-                            className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200/90 dark:border-gray-700/80 p-5 shadow-xs hover:shadow-lg hover:-translate-y-0.5 hover:border-blue-400 dark:hover:border-blue-500/50 transition-all duration-200 cursor-pointer flex flex-col justify-between group relative overflow-hidden"
+                            className="bg-white dark:bg-gray-850 rounded-xl border border-gray-200/70 dark:border-gray-750 p-3 hover:border-blue-400/80 dark:hover:border-blue-500/60 hover:shadow-sm hover:-translate-y-0.5 transition-all duration-150 cursor-pointer flex flex-col justify-between group relative overflow-hidden"
                           >
-                            {/* Barra superior de acento con el color de la categoría */}
+                            {/* Borde sutil superior de acento con color */}
                             <div 
-                              className="absolute top-0 left-0 right-0 h-1.5 transition-all group-hover:h-2"
+                              className="absolute top-0 left-0 right-0 h-0.5 transition-all group-hover:h-1 opacity-80"
                               style={{ backgroundColor: cat.color }}
                             />
 
                             <div>
-                              {/* Fila superior: Ícono y opciones */}
-                              <div className="flex items-start justify-between gap-3 mb-4 pt-1">
+                              {/* Ícono sutil + Contadores */}
+                              <div className="flex items-center justify-between gap-2 mb-2 pt-0.5">
                                 <div 
-                                  style={{ backgroundColor: `${cat.color}18`, color: cat.color }}
-                                  className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform"
+                                  style={{ backgroundColor: `${cat.color}15`, color: cat.color }}
+                                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform"
                                 >
-                                  <DynamicIcon name={cat.iconName} size={22} />
+                                  <DynamicIcon name={cat.iconName} size={16} />
                                 </div>
 
-                                <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-                                  <button
-                                    type="button"
-                                    onClick={(e) => openAddCategoryModal(cat.id, e)}
-                                    className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-xl transition-colors"
-                                    title="Añadir subcategoría"
-                                  >
-                                    <Plus size={16} />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={(e) => { e.stopPropagation(); openEditCategoryModal(cat); }}
-                                    className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-colors"
-                                    title="Editar categoría"
-                                  >
-                                    <Edit2 size={15} />
-                                  </button>
-                                </div>
+                                <span className="text-[10px] font-medium px-1.5 py-0.2 rounded-md bg-gray-100 dark:bg-gray-750 text-gray-500 dark:text-gray-400">
+                                  {totalLinks} {totalLinks === 1 ? 'link' : 'links'}
+                                </span>
                               </div>
 
                               {/* Nombre de la categoría */}
-                              <h3 className="font-bold text-gray-900 dark:text-gray-100 text-base sm:text-lg mb-2.5 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
+                              <h3 className="font-semibold text-gray-800 dark:text-gray-150 text-xs sm:text-sm leading-tight mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
                                 {cat.name}
                               </h3>
-
-                              {/* Badges de Información */}
-                              <div className="flex items-center flex-wrap gap-2 mb-4">
-                                {catSubCats.length > 0 && (
-                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/40">
-                                    <Folder size={12} />
-                                    {catSubCats.length} {catSubCats.length === 1 ? 'subcategoría' : 'subcategorías'}
-                                  </span>
-                                )}
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-gray-100 dark:bg-gray-700/60 text-gray-700 dark:text-gray-300 border border-gray-200/60 dark:border-gray-600/40">
-                                  <LinkIcon size={12} />
-                                  {totalLinks} {totalLinks === 1 ? 'enlace' : 'enlaces'}
-                                </span>
-                              </div>
                             </div>
 
-                            {/* Footer de la Tarjeta */}
-                            <div className="pt-3 border-t border-gray-100 dark:border-gray-700/60 flex items-center justify-between text-xs font-semibold text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                            {/* Subinfo minimalista */}
+                            <div className="pt-2 mt-2 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-[10px] text-gray-400 dark:text-gray-500 group-hover:text-blue-500 transition-colors">
                               <span>
-                                {catSubCats.length > 0 ? 'Ver subcategorías' : 'Ver enlaces'}
+                                {catSubCats.length > 0 ? `${catSubCats.length} subcat${catSubCats.length > 1 ? 's' : ''}` : 'Directo'}
                               </span>
-                              <ChevronRight size={16} className="transform group-hover:translate-x-1 transition-transform" />
+                              <ChevronRight size={13} className="transform group-hover:translate-x-0.5 transition-transform opacity-70" />
                             </div>
                           </div>
                         );
