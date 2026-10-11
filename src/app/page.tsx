@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import * as LucideIcons from 'lucide-react';
 import { 
   Folder, 
@@ -258,6 +258,15 @@ export default function LinkNestApp() {
 
     return () => unsubscribe();
   }, []);
+
+  // Al cambiar de categoría o entrar a subcategorías, hacer scroll siempre al principio
+  const contentContainerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (contentContainerRef.current) {
+      contentContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [activeCategory, selectedSubCategory]);
 
   // Guardar estado visual expandido localmente
   useEffect(() => {
@@ -1654,10 +1663,11 @@ export default function LinkNestApp() {
         </header>
 
         {/* Content Area */}
-        <div className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+        <div ref={contentContainerRef} className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
           
-          {/* Add New Link Bar */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200/90 dark:border-gray-700/80 p-3 sm:p-4 mb-6 transition-all">
+          {/* Add New Link Bar (Solo visible en pantalla principal / inicio, no en subcategorías) */}
+          {activeCategory === null && (
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200/90 dark:border-gray-700/80 p-3 sm:p-4 mb-6 transition-all">
             <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3">
               <div className="flex-1 relative">
                 <LinkIcon className={`absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors ${newLinkUrl.trim() ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'}`} size={18} />
@@ -1695,6 +1705,7 @@ export default function LinkNestApp() {
               </button>
             </div>
           </div>
+          )}
 
           {/* SEARCH MODE */}
           {searchQuery.trim() !== '' ? (
@@ -2273,94 +2284,31 @@ export default function LinkNestApp() {
 
                     return (
                       <div className="space-y-6">
-                        {/* Breadcrumbs y Barra Superior */}
-                        <div className="space-y-3">
-                          <nav className="flex items-center flex-wrap gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setActiveCategory(null);
-                                setSelectedSubCategory(null);
-                              }}
-                              className="hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 font-semibold transition-colors"
+                        {/* Encabezado limpio: Título de la Categoría y Botón Volver en la misma línea */}
+                        <div className="flex items-center justify-between gap-3 pb-2 border-b border-gray-200/60 dark:border-gray-800">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div
+                              style={{ backgroundColor: `${activeCatObj?.color || '#3b82f6'}20`, color: activeCatObj?.color || '#3b82f6' }}
+                              className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-2xs"
                             >
-                              <Folder size={13} />
-                              Todas las Categorías
-                            </button>
-                            {path.map((p, idx) => (
-                              <React.Fragment key={p.id}>
-                                <ChevronRight size={12} className="text-gray-400" />
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setActiveCategory(p.id);
-                                    setSelectedSubCategory(null);
-                                  }}
-                                  className={`font-semibold transition-colors ${
-                                    idx === path.length - 1 && !selectedSubCategoryObj 
-                                      ? 'text-gray-900 dark:text-gray-100' 
-                                      : 'hover:text-blue-600 dark:hover:text-blue-400'
-                                  }`}
-                                >
-                                  {p.name}
-                                </button>
-                              </React.Fragment>
-                            ))}
-                            {selectedSubCategoryObj && (
-                              <React.Fragment>
-                                <ChevronRight size={12} className="text-gray-400" />
-                                <span className="font-bold text-gray-900 dark:text-gray-100">
-                                  {selectedSubCategoryObj.name}
-                                </span>
-                              </React.Fragment>
-                            )}
-                          </nav>
-
-                          {/* Banner compacto y elegante de la Categoría Principal */}
-                          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200/80 dark:border-gray-750 p-3 sm:p-4 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                            <div className="flex items-center gap-3">
-                              <div
-                                style={{ backgroundColor: `${activeCatObj?.color || '#3b82f6'}15`, color: activeCatObj?.color || '#3b82f6' }}
-                                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-2xs"
-                              >
-                                <DynamicIcon name={activeCatObj?.iconName || 'Folder'} size={20} />
-                              </div>
-                              <div>
-                                <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-gray-100">
-                                  {activeCatObj?.name || 'Categoría'}
-                                </h2>
-                                <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 font-medium">
-                                  <span>{getRecursiveLinkCount(activeCategory)} {getRecursiveLinkCount(activeCategory) === 1 ? 'enlace' : 'enlaces'}</span>
-                                  {subCats.length > 0 && (
-                                    <>
-                                      <span>•</span>
-                                      <span className="text-blue-600 dark:text-blue-400">{subCats.length} subcat{subCats.length > 1 ? 's' : ''}</span>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
+                              <DynamicIcon name={activeCatObj?.iconName || 'Folder'} size={18} />
                             </div>
-
-                            <div className="flex items-center flex-wrap gap-2">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setActiveCategory(null);
-                                  setSelectedSubCategory(null);
-                                }}
-                                className="px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-650 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
-                              >
-                                <LucideIcons.ArrowLeft size={13} /> Volver
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => openAddCategoryModal(activeCategory)}
-                                className="px-3 py-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg transition-colors flex items-center gap-1 border border-blue-200/60 dark:border-blue-800/40 cursor-pointer"
-                              >
-                                <Plus size={13} /> Subcategoría
-                              </button>
-                            </div>
+                            <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 truncate">
+                              {activeCatObj?.name || 'Categoría'}
+                            </h2>
                           </div>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveCategory(null);
+                              setSelectedSubCategory(null);
+                            }}
+                            className="px-3.5 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer border border-gray-200/80 dark:border-gray-750 shrink-0 shadow-2xs hover:shadow-xs active:scale-[0.98]"
+                          >
+                            <LucideIcons.ArrowLeft size={14} /> 
+                            <span>Volver</span>
+                          </button>
                         </div>
 
                         {/* DESPLIEGUE ELEGANTE Y PROLIJO DE SUBCATEGORÍAS */}
