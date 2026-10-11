@@ -1610,14 +1610,16 @@ export default function LinkNestApp() {
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
             </button>
 
-            <div className="relative w-full max-w-md flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={17} />
+            <div className="relative w-full max-w-md flex-1 group">
+              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none text-blue-500 transition-colors group-focus-within:text-blue-600">
+                <Search size={17} strokeWidth={2.2} />
+              </div>
               <input 
                 type="text" 
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Buscar por título, etiqueta o URL..." 
-                className="w-full pl-10 pr-9 py-2 bg-gray-100 dark:bg-gray-800/80 border border-transparent rounded-xl text-sm focus:border-blue-500 dark:focus:border-blue-400 focus:bg-white dark:focus:bg-gray-900 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 outline-none transition-all dark:text-white"
+                placeholder="Buscar enlaces, etiquetas o categorías..." 
+                className="w-full pl-10 pr-9 py-2.5 bg-blue-50/50 dark:bg-gray-800/90 border-2 border-blue-200/80 dark:border-blue-900/60 rounded-xl text-sm font-medium text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 dark:focus:border-blue-400 focus:bg-white dark:focus:bg-gray-900 focus:ring-4 focus:ring-blue-500/15 outline-none transition-all shadow-xs"
               />
               {searchQuery && (
                 <button
@@ -2543,18 +2545,12 @@ export default function LinkNestApp() {
                   })()}
                 </div>
               ) : (
-                /* PANTALLA DE INICIO: TODAS LAS CATEGORÍAS EN TARJETAS MODERNAS (CARDS) */
+                /* PANTALLA DE INICIO: TODAS LAS CATEGORÍAS */
                 <div>
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
-                    <div>
-                      <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                        <Folder className="text-blue-500" size={20} />
-                        Todas las Categorías
-                      </h2>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        {categories.filter(c => c.parentId === null).length} categorías principales • {links.length} enlaces guardados
-                      </p>
-                    </div>
+                  <div className="mb-4">
+                    <p className="text-xs font-semibold text-white tracking-wide">
+                      {categories.filter(c => c.parentId === null).length} categorías principales • {links.length} enlaces guardados
+                    </p>
                   </div>
 
                   {categories.filter(c => c.parentId === null).length === 0 ? (
