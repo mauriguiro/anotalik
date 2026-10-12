@@ -1977,6 +1977,32 @@ export default function LinkNestApp() {
           </div>
           )}
 
+          {/* Cajón de búsqueda reubicado: entre pegar enlace y botones de categorías/favoritos */}
+          <div className="mb-5">
+            <div className="relative w-full group">
+              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none text-amber-500/80 transition-colors group-focus-within:text-amber-500">
+                <Search size={16} strokeWidth={2} />
+              </div>
+              <input 
+                type="text" 
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Buscar enlaces, etiquetas o categorías..." 
+                className="w-full pl-10 pr-9 py-2.5 bg-amber-50/20 dark:bg-gray-800/80 border border-amber-300/60 dark:border-amber-500/40 rounded-xl text-xs sm:text-sm font-medium text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-amber-400 dark:focus:border-amber-400 focus:bg-white dark:focus:bg-gray-900 focus:ring-2 focus:ring-amber-400/15 outline-none transition-all shadow-2xs"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-0.5 rounded-full"
+                  title="Limpiar búsqueda"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+          </div>
+
           {/* SEARCH MODE */}
           {searchQuery.trim() !== '' ? (
             <div>
@@ -2059,32 +2085,6 @@ export default function LinkNestApp() {
             </div>
           ) : (
             <div>
-              {/* Cajón de búsqueda reubicado: entre pegar enlace y botones de categorías/favoritos */}
-              <div className="mb-5">
-                <div className="relative w-full group">
-                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none text-amber-500/80 transition-colors group-focus-within:text-amber-500">
-                    <Search size={16} strokeWidth={2} />
-                  </div>
-                  <input 
-                    type="text" 
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                    placeholder="Buscar enlaces, etiquetas o categorías..." 
-                    className="w-full pl-10 pr-9 py-2.5 bg-amber-50/20 dark:bg-gray-800/80 border border-amber-300/60 dark:border-amber-500/40 rounded-xl text-xs sm:text-sm font-medium text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-amber-400 dark:focus:border-amber-400 focus:bg-white dark:focus:bg-gray-900 focus:ring-2 focus:ring-amber-400/15 outline-none transition-all shadow-2xs"
-                  />
-                  {searchQuery && (
-                    <button
-                      type="button"
-                      onClick={() => setSearchQuery('')}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-0.5 rounded-full"
-                      title="Limpiar búsqueda"
-                    >
-                      <X size={14} />
-                    </button>
-                  )}
-                </div>
-              </div>
-
               {/* Pestañas de la Pantalla Principal */}
               <div className="flex items-center justify-between gap-3 mb-5 pb-2.5 border-b border-gray-200/80 dark:border-gray-800">
                 <div className="flex items-center gap-1.5">
