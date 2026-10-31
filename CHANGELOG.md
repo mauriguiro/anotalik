@@ -6,6 +6,18 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.2.1] - 2026-10-31
+
+### Mejorado
+- **Rediseño completo, ágil y visualmente agradable de la pantalla de compartir**:
+  - **Selector de categorías cómodo y fluido**: Reemplazada la cuadrícula rígida de botones por una lista jerárquica limpia con iconos, colores y chevrons suaves para desplegar y seleccionar subcategorías con un solo toque.
+  - **Buscador instantáneo de categorías**: Barra de búsqueda integrada para filtrar al instante cualquier categoría o subcategoría por nombre (ej. "viajes", "estudio") con selección directa en 1 clic.
+  - **Banner de categoría seleccionada**: Indicador visual destacado en tiempo real con el camino completo `Padre › Subcategoría` y confirmación de selección.
+  - **Creación ágil de categorías y subcategorías**: Botón accesible `+ Nueva categoría` arriba del buscador y botón directo `+ Añadir subcategoría` dentro de cada carpeta principal.
+  - **Diseño más ligero y compacto**: Disposición compacta del título y enlace con previsualización de favicon, botón para probar URL y panel colapsable para notas y etiquetas para no sobrecargar la vista.
+
+---
+
 ## [1.2.0] - 2026-10-29
 
 ### Añadido
