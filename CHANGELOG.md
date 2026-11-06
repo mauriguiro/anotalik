@@ -6,6 +6,19 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.2.2] - 2026-11-06
+
+### Mejorado
+- **Rediseño completo de la ventana de guardado (Web Share Target)**:
+  - **Corrección total de contraste y legibilidad en subcategorías**: Se solucionó el problema de fuentes poco visibles por colores de fondo. Las subcategorías ahora se presentan en tarjetas individuales de máximo contraste (`text-gray-900` en tema claro y `text-white` en tema oscuro) sobre fondos nítidos y bien delimitados.
+  - **Estructura jerárquica limpia y elegante**: Cada grupo de categoría principal cuenta con una cabecera clara, botón directo *"Elegir esta"* para archivar en la carpeta raíz y chevron animado para desplegar sus subcategorías.
+  - **Selector táctil de subcategorías mejorado**: Cada subcategoría cuenta con su propio icono de color, texto en negrita y radio/check circular claro. Al seleccionarse, se resalta en azul sólido (`bg-blue-600 text-white`) con checkmark blanco de confirmación.
+  - **Banner de destino destacado**: Tarjeta superior con borde azul reforzado que muestra en todo momento la ruta completa seleccionada (`Padre › Subcategoría`) y confirmación `✓ Listo`.
+  - **Buscador de carpetas ágil con resultados de alto contraste**: Filtrado en tiempo real que lista las rutas coincidentes con tipografía brillante y selección instantánea al tocar.
+  - **Diseño general prolijo y refinado**: Header minimalista, tarjeta de URL y título estilizada con favicon y botón *"Probar enlace"*, panel colapsable para notas y botón de guardado destacado.
+
+---
+
 ## [1.2.1] - 2026-10-31
 
 ### Mejorado
