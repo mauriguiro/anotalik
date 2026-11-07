@@ -6,6 +6,16 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.2.4] - 2026-11-07
+
+### Mejorado
+- **Encabezado centrado e identidad de marca en la ventana de guardado compartida**:
+  - Incorporación del nombre y branding oficial **AnotaLink** en la parte superior del modal.
+  - Centrado del título principal **"Guardar enlace"**.
+  - Botón de cierre `X` anclado en la esquina superior derecha sin distorsionar el centrado del encabezado.
+
+---
+
 ## [1.2.3] - 2026-11-07
 
 ### Mejorado

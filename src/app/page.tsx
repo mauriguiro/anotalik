@@ -4057,15 +4057,21 @@ export default function LinkNestApp() {
         <div className="fixed inset-0 z-[90] bg-black/60 dark:bg-black/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-150">
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-gray-200 dark:border-gray-800 my-auto flex flex-col">
             
-            {/* 1. Título en una sola línea, sin leyenda de 'compartido' ni subtítulo gris */}
-            <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+            {/* 1. Encabezado: Nombre de la app AnotaLink arriba de todo y título 'Guardar enlace' centrado */}
+            <div className="pt-3.5 pb-2.5 px-4 border-b border-gray-100 dark:border-gray-800 text-center relative">
+              <div className="flex items-center justify-center gap-1.5 mb-0.5">
+                <Folder size={14} className="text-blue-500" />
+                <span className="text-xs font-bold text-blue-600 dark:text-blue-400 tracking-wide">
+                  AnotaLink
+                </span>
+              </div>
               <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
                 Guardar enlace
               </h2>
               <button 
                 type="button"
                 onClick={handleDismissSharedScreen}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                className="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
                 title="Cerrar"
               >
                 <X size={18} />
