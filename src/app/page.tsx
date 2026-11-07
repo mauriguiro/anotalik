@@ -352,7 +352,7 @@ export default function LinkNestApp() {
 
         const sharedPayload = {
           url: detectedUrl,
-          title: detectedTitle,
+          title: '',
           description: remainingText,
           categoryId: null as string | null,
           tags: '',
@@ -4052,621 +4052,332 @@ export default function LinkNestApp() {
         </div>
       )}
 
-      {/* PANTALLA DE GUARDADO REDISEÑADA: PROLIJA, INTUITIVA, ÁGIL Y ELEGANTE */}
+      {/* PANTALLA DE GUARDADO EXACTA SEGÚN INDICACIONES */}
       {sharedTargetLink && (
-        <div className="fixed inset-0 z-[90] bg-black/60 dark:bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-gray-200/90 dark:border-gray-800 my-auto flex flex-col animate-in zoom-in-95 duration-150">
-            {/* Header limpio y elegante */}
-            <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 bg-gradient-to-r from-blue-50/80 via-indigo-50/50 to-transparent dark:from-gray-800/80 dark:to-gray-900 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-md shadow-blue-500/25 shrink-0">
-                  <Share2 size={20} />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-base sm:text-lg font-extrabold text-gray-900 dark:text-white leading-tight">
-                      Guardar Enlace
-                    </h2>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300">
-                      Compartido
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {sharedLinkSavedSuccess 
-                      ? '¡Enlace archivado con éxito!' 
-                      : 'Elige la carpeta donde deseas archivarlo.'}
-                  </p>
-                </div>
-              </div>
+        <div className="fixed inset-0 z-[90] bg-black/60 dark:bg-black/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-gray-200 dark:border-gray-800 my-auto flex flex-col">
+            
+            {/* 1. Título en una sola línea, sin leyenda de 'compartido' ni subtítulo gris */}
+            <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+              <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
+                Guardar enlace
+              </h2>
               <button 
                 type="button"
                 onClick={handleDismissSharedScreen}
-                className="text-gray-400 hover:text-gray-700 dark:hover:text-white p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
-                title="Cerrar y descartar"
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                title="Cerrar"
               >
                 <X size={18} />
               </button>
             </div>
 
             {/* Contenido */}
-            <div className="p-4 sm:p-5 overflow-y-auto space-y-3.5 max-h-[75vh]">
+            <div className="p-4 overflow-y-auto space-y-3.5 max-h-[80vh]">
               {sharedLinkSavedSuccess ? (
                 /* Estado Éxito */
-                <div className="text-center py-6 px-2 space-y-4">
-                  <div className="w-16 h-16 mx-auto rounded-full bg-emerald-100 dark:bg-emerald-950/60 border-2 border-emerald-400 dark:border-emerald-600 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-lg shadow-emerald-500/20 animate-in zoom-in-75 duration-200">
-                    <CheckCircle2 size={38} strokeWidth={2.5} />
+                <div className="text-center py-5 px-2 space-y-3">
+                  <div className="w-14 h-14 mx-auto rounded-full bg-emerald-100 dark:bg-emerald-950/60 border-2 border-emerald-400 dark:border-emerald-600 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-sm animate-in zoom-in-75 duration-150">
+                    <CheckCircle2 size={34} strokeWidth={2.5} />
                   </div>
                   <div>
-                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+                    <h3 className="text-base font-bold text-gray-900 dark:text-white">
                       ¡Enlace guardado con éxito!
                     </h3>
-                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 mt-1">
-                      Se archivó en <span className="font-bold text-blue-600 dark:text-blue-400">"{sharedLinkSavedCategoryName}"</span>
+                    <p className="text-xs text-gray-600 dark:text-gray-300 mt-0.5">
+                      Se guardó en <span className="font-bold text-blue-600 dark:text-blue-400">"{sharedLinkSavedCategoryName}"</span>
                     </p>
                   </div>
-                  
-                  {/* Resumen del link guardado */}
-                  <div className="bg-gray-50 dark:bg-gray-800/80 rounded-2xl p-3 max-w-sm mx-auto text-left flex items-center gap-3 border border-gray-200 dark:border-gray-700">
-                    <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-blue-600 shrink-0">
-                      <LinkIcon size={16} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold text-gray-900 dark:text-white truncate">
-                        {sharedTargetLink.title}
-                      </p>
-                      <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
-                        {sharedTargetLink.url}
-                      </p>
-                    </div>
-                  </div>
 
-                  {/* Botones de acción post-guardado */}
-                  <div className="pt-3 flex flex-col sm:flex-row gap-2 justify-center max-w-sm mx-auto">
+                  <div className="pt-2 flex flex-col sm:flex-row gap-2 justify-center max-w-xs mx-auto">
                     {sharedTargetLink.categoryId && (
                       <button
                         type="button"
                         onClick={handleViewSavedCategory}
-                        className="w-full py-2.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold text-xs sm:text-sm shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
+                        className="w-full py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                       >
-                        <Folder size={15} />
+                        <Folder size={14} />
                         <span>Ir a la categoría</span>
                       </button>
                     )}
                     <button
                       type="button"
                       onClick={handleDismissSharedScreen}
-                      className="w-full py-2.5 px-4 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                      className="w-full py-2 px-3 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-xl font-bold text-xs transition-all flex items-center justify-center cursor-pointer"
                     >
-                      <span>Ver todos mis enlaces</span>
+                      <span>Cerrar</span>
                     </button>
                   </div>
                 </div>
               ) : (
-                /* Formulario de Guardado */
+                /* Formulario */
                 <>
-                  {/* Tarjeta del Enlace y Título */}
-                  <div className="bg-gray-50 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 rounded-2xl p-3 sm:p-3.5 space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className="w-6 h-6 rounded-md bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 flex items-center justify-center overflow-hidden shrink-0 shadow-2xs">
-                          {(() => {
-                            let domain = '';
-                            try {
-                              const u = sharedTargetLink.url.startsWith('http') ? sharedTargetLink.url : `https://${sharedTargetLink.url}`;
-                              domain = new URL(u).hostname;
-                            } catch {}
-                            if (domain) {
-                              return (
-                                <img 
-                                  src={`https://www.google.com/s2/favicons?domain=${domain}&sz=64`}
-                                  alt="favicon" 
-                                  className="w-4 h-4 object-contain"
-                                  onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
-                                />
-                              );
-                            }
-                            return <Globe size={13} className="text-blue-500" />;
-                          })()}
-                        </div>
-                        <span className="text-xs font-bold text-gray-800 dark:text-gray-200 truncate">
-                          {(() => {
-                            try {
-                              const u = sharedTargetLink.url.startsWith('http') ? sharedTargetLink.url : `https://${sharedTargetLink.url}`;
-                              return new URL(u).hostname.replace('www.', '');
-                            } catch {
-                              return 'Enlace web';
-                            }
-                          })()}
-                        </span>
-                      </div>
-                      <a 
-                        href={sharedTargetLink.url.startsWith('http') ? sharedTargetLink.url : `https://${sharedTargetLink.url}`}
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline"
-                        title="Abrir enlace en pestaña nueva"
-                      >
-                        <span>Probar enlace</span>
-                        <ExternalLink size={12} />
-                      </a>
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">
-                        Título del enlace <span className="text-red-500">*</span>
-                      </label>
-                      <input 
-                        type="text" 
-                        value={sharedTargetLink.title}
-                        onChange={(e) => setSharedTargetLink(prev => prev ? ({ ...prev, title: e.target.value }) : null)}
-                        placeholder="Título o nombre del enlace..."
-                        className="w-full px-3.5 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-xl text-xs sm:text-sm font-bold text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-2xs"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  {/* Selector Visual, Cómodo y Ágil de Categorías */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">
-                        Categoría destino <span className="text-red-500">*</span>
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => openAddCategoryModal(null)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 rounded-xl transition-all shadow-2xs cursor-pointer"
-                        title="Crear una nueva categoría"
-                      >
-                        <Plus size={13} strokeWidth={2.5} />
-                        <span>Nueva categoría</span>
-                      </button>
-                    </div>
-
-                    {/* Resumen destacado de la selección actual */}
-                    {(() => {
-                      const selectedCat = categories.find(c => c.id === sharedTargetLink.categoryId);
-                      if (selectedCat) {
-                        const path = getCategoryPath(selectedCat.id);
-                        return (
-                          <div className="flex items-center justify-between px-3.5 py-2.5 bg-blue-50/90 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-2xl shadow-2xs">
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              <div 
-                                style={{ backgroundColor: `${selectedCat.color}25`, color: selectedCat.color }}
-                                className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-2xs font-bold"
-                              >
-                                <DynamicIcon name={selectedCat.iconName} size={15} />
-                              </div>
-                              <div className="min-w-0">
-                                <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wider block">
-                                  Guardando en:
-                                </span>
-                                <span className="text-xs sm:text-sm font-extrabold text-gray-900 dark:text-white truncate block">
-                                  {path.map(p => p.name).join(' › ')}
-                                </span>
-                              </div>
-                            </div>
-                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100/90 dark:bg-emerald-900/40 px-2.5 py-1 rounded-full shrink-0">
-                              <Check size={12} strokeWidth={3} /> Listo
-                            </span>
-                          </div>
-                        );
-                      }
-                      return (
-                        <div className="flex items-center justify-between px-3.5 py-2.5 bg-gray-50 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-2xs">
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <div className="w-7 h-7 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 shrink-0 font-bold">
-                              <Folder size={15} />
-                            </div>
-                            <div className="min-w-0">
-                              <span className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider block">
-                                Guardando en:
-                              </span>
-                              <span className="text-xs sm:text-sm font-bold text-gray-800 dark:text-gray-200 truncate block">
-                                Sin categoría (Bandeja general)
-                              </span>
-                            </div>
-                          </div>
-                          <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 bg-gray-200/70 dark:bg-gray-700 px-2.5 py-1 rounded-full shrink-0">
-                            General
-                          </span>
-                        </div>
-                      );
-                    })()}
-
-                    {/* Buscador de categorías y subcategorías */}
-                    <div className="relative">
-                      <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-                      <input 
-                        type="text"
-                        value={sharedCatSearch}
-                        onChange={(e) => setSharedCatSearch(e.target.value)}
-                        placeholder="Buscar carpeta o subcategoría..."
-                        className="w-full pl-9 pr-8 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-xs sm:text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-2xs"
-                      />
-                      {sharedCatSearch && (
-                        <button
-                          type="button"
-                          onClick={() => setSharedCatSearch('')}
-                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1"
-                        >
-                          <X size={13} />
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Lista Cómoda y Ágil de Categorías (Máximo Contraste y Claridad) */}
-                    <div className="border border-gray-200 dark:border-gray-700 rounded-2xl bg-white dark:bg-gray-900 max-h-56 overflow-y-auto p-2 space-y-1.5 shadow-inner">
-                      {/* Modo 1: Búsqueda activa */}
-                      {sharedCatSearch.trim() !== '' ? (
-                        (() => {
-                          const query = sharedCatSearch.trim().toLowerCase();
-                          const matchingItems = categories.filter(c => {
-                            const path = getCategoryPath(c.id).map(p => p.name).join(' ').toLowerCase();
-                            return path.includes(query) || c.name.toLowerCase().includes(query);
-                          });
-
-                          if (matchingItems.length === 0) {
+                  {/* 2. Logo o miniatura de la red de donde se comparte */}
+                  <div className="flex items-center justify-center py-1">
+                    <div className="flex flex-col items-center gap-1">
+                      <div className="w-12 h-12 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center overflow-hidden shadow-2xs">
+                        {(() => {
+                          let domain = '';
+                          try {
+                            const u = sharedTargetLink.url.startsWith('http') ? sharedTargetLink.url : `https://${sharedTargetLink.url}`;
+                            domain = new URL(u).hostname;
+                          } catch {}
+                          if (domain) {
                             return (
-                              <div className="p-4 text-center space-y-2">
-                                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">
-                                  No encontramos "{sharedCatSearch}".
-                                </p>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setNewCatName(sharedCatSearch);
-                                    openAddCategoryModal(null);
-                                  }}
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-xs"
-                                >
-                                  <Plus size={13} />
-                                  <span>Crear categoría "{sharedCatSearch}"</span>
-                                </button>
-                              </div>
+                              <img 
+                                src={`https://www.google.com/s2/favicons?domain=${domain}&sz=128`}
+                                alt="Logo" 
+                                className="w-8 h-8 object-contain"
+                                onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                              />
                             );
                           }
-
-                          return matchingItems.map(item => {
-                            const isSelected = sharedTargetLink.categoryId === item.id;
-                            const path = getCategoryPath(item.id);
-
-                            return (
-                              <div
-                                key={item.id}
-                                onClick={() => {
-                                  setSharedTargetLink(prev => prev ? ({ ...prev, categoryId: item.id }) : null);
-                                  if (item.parentId) {
-                                    setSharedCategoryExpanded(prev => ({ ...prev, [item.parentId]: true }));
-                                  }
-                                }}
-                                className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs sm:text-sm cursor-pointer transition-all ${
-                                  isSelected
-                                    ? 'bg-blue-600 text-white font-bold shadow-xs border border-blue-600'
-                                    : 'bg-gray-50 dark:bg-gray-800 hover:bg-blue-50/70 dark:hover:bg-gray-750 text-gray-900 dark:text-white font-bold border border-gray-200 dark:border-gray-700'
-                                }`}
-                              >
-                                <div className="flex items-center gap-2.5 min-w-0">
-                                  <div 
-                                    style={{ 
-                                      backgroundColor: isSelected ? 'rgba(255,255,255,0.25)' : `${item.color}25`, 
-                                      color: isSelected ? '#ffffff' : item.color 
-                                    }}
-                                    className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 shadow-2xs font-bold"
-                                  >
-                                    <DynamicIcon name={item.iconName} size={13} />
-                                  </div>
-                                  <div className="min-w-0 truncate">
-                                    {path.length > 1 ? (
-                                      <span>
-                                        <span className={isSelected ? 'text-blue-100 font-normal' : 'text-gray-500 dark:text-gray-400 font-normal'}>
-                                          {path.slice(0, -1).map(p => p.name).join(' › ')} ›{' '}
-                                        </span>
-                                        <span className={isSelected ? 'text-white font-extrabold' : 'text-gray-900 dark:text-white font-extrabold'}>
-                                          {item.name}
-                                        </span>
-                                      </span>
-                                    ) : (
-                                      <span className={isSelected ? 'text-white font-extrabold' : 'text-gray-900 dark:text-white font-extrabold'}>
-                                        {item.name}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                                <div className="shrink-0 ml-2">
-                                  {isSelected ? (
-                                    <div className="w-5 h-5 rounded-full bg-white text-blue-600 flex items-center justify-center">
-                                      <Check size={13} strokeWidth={3} />
-                                    </div>
-                                  ) : (
-                                    <div className="w-4 h-4 rounded-full border-2 border-gray-300 dark:border-gray-600" />
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          });
-                        })()
-                      ) : (
-                        /* Modo 2: Navegación jerárquica limpia y fluida */
-                        <>
-                          {/* Opción Sin Categoría */}
-                          <div
-                            onClick={() => setSharedTargetLink(prev => prev ? ({ ...prev, categoryId: null }) : null)}
-                            className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs sm:text-sm cursor-pointer transition-all ${
-                              sharedTargetLink.categoryId === null
-                                ? 'bg-blue-600 text-white font-bold shadow-xs border border-blue-600'
-                                : 'bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-750 text-gray-900 dark:text-white font-bold border border-gray-200 dark:border-gray-700'
-                            }`}
-                          >
-                            <div className="flex items-center gap-2.5">
-                              <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 font-bold ${
-                                sharedTargetLink.categoryId === null 
-                                  ? 'bg-white/20 text-white' 
-                                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200'
-                              }`}>
-                                <Folder size={13} />
-                              </div>
-                              <span>Sin categoría (Bandeja general)</span>
-                            </div>
-                            <div className="shrink-0 ml-2">
-                              {sharedTargetLink.categoryId === null ? (
-                                <div className="w-5 h-5 rounded-full bg-white text-blue-600 flex items-center justify-center">
-                                  <Check size={13} strokeWidth={3} />
-                                </div>
-                              ) : (
-                                <div className="w-4 h-4 rounded-full border-2 border-gray-300 dark:border-gray-600" />
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Categorías Raíz */}
-                          {categories.filter(c => c.parentId === null).map(cat => {
-                            const subCats = categories.filter(c => c.parentId === cat.id);
-                            const hasChildren = subCats.length > 0;
-                            const isExpanded = !!sharedCategoryExpanded[cat.id];
-                            const isSelected = sharedTargetLink.categoryId === cat.id;
-
-                            if (!hasChildren) {
-                              /* Categoría Principal sin subcategorías: Fila directa */
-                              return (
-                                <div
-                                  key={cat.id}
-                                  onClick={() => setSharedTargetLink(prev => prev ? ({ ...prev, categoryId: cat.id }) : null)}
-                                  className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs sm:text-sm cursor-pointer transition-all ${
-                                    isSelected
-                                      ? 'bg-blue-600 text-white font-bold shadow-xs border border-blue-600'
-                                      : 'bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-750 text-gray-900 dark:text-white font-bold border border-gray-200 dark:border-gray-700'
-                                  }`}
-                                >
-                                  <div className="flex items-center gap-2.5 min-w-0">
-                                    <div 
-                                      style={{ 
-                                        backgroundColor: isSelected ? 'rgba(255,255,255,0.25)' : `${cat.color}25`, 
-                                        color: isSelected ? '#ffffff' : cat.color 
-                                      }}
-                                      className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 shadow-2xs font-bold"
-                                    >
-                                      <DynamicIcon name={cat.iconName} size={13} />
-                                    </div>
-                                    <span className="truncate">{cat.name}</span>
-                                  </div>
-                                  <div className="shrink-0 ml-2">
-                                    {isSelected ? (
-                                      <div className="w-5 h-5 rounded-full bg-white text-blue-600 flex items-center justify-center">
-                                        <Check size={13} strokeWidth={3} />
-                                      </div>
-                                    ) : (
-                                      <div className="w-4 h-4 rounded-full border-2 border-gray-300 dark:border-gray-600" />
-                                    )}
-                                  </div>
-                                </div>
-                              );
-                            }
-
-                            /* Categoría Principal con subcategorías: Grupo con apertura suave */
-                            return (
-                              <div key={cat.id} className="rounded-2xl border border-gray-200 dark:border-gray-700/80 overflow-hidden bg-gray-50/70 dark:bg-gray-800/50 transition-all">
-                                {/* Cabecera del Grupo */}
-                                <div 
-                                  className="p-2.5 flex items-center justify-between cursor-pointer hover:bg-gray-100/80 dark:hover:bg-gray-800 transition-colors"
-                                  onClick={() => setSharedCategoryExpanded(prev => ({ ...prev, [cat.id]: !prev[cat.id] }))}
-                                >
-                                  <div className="flex items-center gap-2.5 min-w-0">
-                                    <div 
-                                      style={{ backgroundColor: `${cat.color}25`, color: cat.color }}
-                                      className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-2xs font-bold"
-                                    >
-                                      <DynamicIcon name={cat.iconName} size={15} />
-                                    </div>
-                                    <span className="font-extrabold text-xs sm:text-sm text-gray-900 dark:text-white truncate">
-                                      {cat.name}
-                                    </span>
-                                    <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 bg-gray-200/80 dark:bg-gray-700 px-1.5 py-0.5 rounded-md">
-                                      {subCats.length} {subCats.length === 1 ? 'subcat.' : 'subcats.'}
-                                    </span>
-                                  </div>
-
-                                  <div className="flex items-center gap-2 shrink-0">
-                                    {/* Botón explícito para guardar en la principal */}
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setSharedTargetLink(prev => prev ? ({ ...prev, categoryId: cat.id }) : null);
-                                      }}
-                                      className={`text-xs px-2.5 py-1 rounded-lg border font-bold transition-all cursor-pointer ${
-                                        isSelected
-                                          ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
-                                          : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400'
-                                      }`}
-                                      title="Guardar directamente en esta carpeta principal"
-                                    >
-                                      {isSelected ? '✓ Elegida' : 'Elegir esta'}
-                                    </button>
-
-                                    {/* Chevron para ver/ocultar */}
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setSharedCategoryExpanded(prev => ({ ...prev, [cat.id]: !prev[cat.id] }));
-                                      }}
-                                      className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg hover:bg-gray-200/60 dark:hover:bg-gray-700 transition-colors"
-                                      title={isExpanded ? 'Ocultar subcategorías' : 'Ver subcategorías'}
-                                    >
-                                      <ChevronDown size={16} className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
-                                    </button>
-                                  </div>
-                                </div>
-
-                                {/* Subcategorías Desplegables con Máximo Contraste */}
-                                {isExpanded && (
-                                  <div className="p-2 pt-1 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 space-y-1.5">
-                                    {subCats.map(sub => {
-                                      const isSubSelected = sharedTargetLink.categoryId === sub.id;
-                                      return (
-                                        <div
-                                          key={sub.id}
-                                          onClick={() => setSharedTargetLink(prev => prev ? ({ ...prev, categoryId: sub.id }) : null)}
-                                          className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs sm:text-sm cursor-pointer transition-all ${
-                                            isSubSelected
-                                              ? 'bg-blue-600 text-white font-bold shadow-sm border border-blue-600'
-                                              : 'bg-gray-50 dark:bg-gray-800 hover:bg-blue-50/70 dark:hover:bg-gray-750 text-gray-900 dark:text-white font-bold border border-gray-200 dark:border-gray-700'
-                                          }`}
-                                        >
-                                          <div className="flex items-center gap-2.5 min-w-0">
-                                            <div 
-                                              style={{ 
-                                                backgroundColor: isSubSelected ? 'rgba(255,255,255,0.25)' : `${sub.color}25`, 
-                                                color: isSubSelected ? '#ffffff' : sub.color 
-                                              }}
-                                              className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 shadow-2xs font-bold"
-                                            >
-                                              <DynamicIcon name={sub.iconName} size={13} />
-                                            </div>
-                                            <span className="truncate">{sub.name}</span>
-                                          </div>
-                                          <div className="shrink-0 ml-2">
-                                            {isSubSelected ? (
-                                              <div className="w-5 h-5 rounded-full bg-white text-blue-600 flex items-center justify-center">
-                                                <Check size={13} strokeWidth={3} />
-                                              </div>
-                                            ) : (
-                                              <div className="w-4 h-4 rounded-full border-2 border-gray-300 dark:border-gray-600" />
-                                            )}
-                                          </div>
-                                        </div>
-                                      );
-                                    })}
-
-                                    {/* Botón para añadir subcategoría en esta categoría */}
-                                    <button
-                                      type="button"
-                                      onClick={() => openAddCategoryModal(cat.id)}
-                                      className="w-full text-center py-1.5 px-3 text-xs font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-1.5"
-                                    >
-                                      <Plus size={13} strokeWidth={2.5} />
-                                      <span>Añadir subcategoría en "{cat.name}"</span>
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </>
-                      )}
+                          return <Globe size={24} className="text-blue-500" />;
+                        })()}
+                      </div>
+                      <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">
+                        {(() => {
+                          try {
+                            const u = sharedTargetLink.url.startsWith('http') ? sharedTargetLink.url : `https://${sharedTargetLink.url}`;
+                            return new URL(u).hostname.replace('www.', '');
+                          } catch {
+                            return 'Enlace web';
+                          }
+                        })()}
+                      </span>
                     </div>
                   </div>
 
-                  {/* Opciones Adicionales: Favorito y Notas */}
-                  <div className="pt-1 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <button
-                        type="button"
-                        onClick={() => setSharedTargetLink(prev => prev ? ({ ...prev, isFavorite: !prev.isFavorite }) : null)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                          sharedTargetLink.isFavorite
-                            ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-300 dark:border-amber-700 shadow-2xs'
-                            : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
-                        }`}
-                      >
-                        <Star size={13} className={sharedTargetLink.isFavorite ? 'fill-amber-400 text-amber-500' : ''} />
-                        <span>{sharedTargetLink.isFavorite ? '⭐ Guardar en Favoritos' : 'Marcar Favorito'}</span>
-                      </button>
+                  {/* 3. Leyenda 'Título del enlace' y cajón para el título vacío */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                      Título del enlace
+                    </label>
+                    <input 
+                      type="text" 
+                      value={sharedTargetLink.title}
+                      onChange={(e) => setSharedTargetLink(prev => prev ? ({ ...prev, title: e.target.value }) : null)}
+                      placeholder="Escribe el título aquí..."
+                      className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-xs sm:text-sm font-medium text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-2xs"
+                      autoFocus
+                    />
+                  </div>
 
-                      <button
-                        type="button"
-                        onClick={() => setIsSharedNotesOpen(!isSharedNotesOpen)}
-                        className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
-                      >
-                        <span>{isSharedNotesOpen ? 'Ocultar notas' : '+ Notas y etiquetas'}</span>
-                        <ChevronDown size={14} className={`transition-transform duration-200 ${isSharedNotesOpen ? 'rotate-180' : ''}`} />
-                      </button>
+                  {/* 4. Título 'Categoría' y botón 'Nueva' en la misma línea */}
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-xs font-bold text-gray-700 dark:text-gray-300">
+                      Categoría
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => openAddCategoryModal(null)}
+                      className="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg transition-colors cursor-pointer border border-blue-200 dark:border-blue-800"
+                    >
+                      <Plus size={12} strokeWidth={2.5} />
+                      <span>Nueva</span>
+                    </button>
+                  </div>
+
+                  {/* 5. Categorías ordenadas alfabéticamente en forma de pestañas de una sola línea con nombre y color, checkbox, y flechita hacia abajo para desplegar subcategorías con checkbox */}
+                  <div className="border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-900 max-h-52 overflow-y-auto p-1.5 space-y-1">
+                    {/* Opción Sin categoría */}
+                    <div 
+                      onClick={() => setSharedTargetLink(prev => prev ? ({ ...prev, categoryId: prev.categoryId === null ? null : null }) : null)}
+                      className={`w-full px-2.5 py-1.5 rounded-lg border flex items-center justify-between text-xs cursor-pointer transition-all ${
+                        sharedTargetLink.categoryId === null
+                          ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-400 dark:border-blue-600 text-blue-900 dark:text-blue-100 font-bold'
+                          : 'bg-gray-50 dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 font-medium'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        {/* Checkbox */}
+                        <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
+                          sharedTargetLink.categoryId === null
+                            ? 'bg-blue-600 border-blue-600 text-white'
+                            : 'border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-900'
+                        }`}>
+                          {sharedTargetLink.categoryId === null && <Check size={11} strokeWidth={3} />}
+                        </div>
+                        <div className="w-4 h-4 rounded flex items-center justify-center bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 shrink-0">
+                          <Folder size={11} />
+                        </div>
+                        <span className="truncate">Sin categoría (General)</span>
+                      </div>
                     </div>
 
-                    {isSharedNotesOpen && (
-                      <div className="space-y-2 pt-1 animate-in fade-in duration-150">
-                        <div>
-                          <label className="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
-                            Notas o recordatorio (opcional)
-                          </label>
-                          <textarea 
-                            value={sharedTargetLink.description}
-                            onChange={(e) => setSharedTargetLink(prev => prev ? ({ ...prev, description: e.target.value }) : null)}
-                            placeholder="Escribe algún detalle o nota sobre este enlace..."
-                            rows={2}
-                            className="w-full px-3.5 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-xl text-xs sm:text-sm font-medium text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none shadow-2xs"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
-                            Etiquetas (opcional)
-                          </label>
-                          <input 
-                            type="text" 
-                            value={sharedTargetLink.tags}
-                            onChange={(e) => setSharedTargetLink(prev => prev ? ({ ...prev, tags: e.target.value }) : null)}
-                            placeholder="ej. trabajo, receta, tutorial (separadas por coma)"
-                            className="w-full px-3.5 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-xl text-xs sm:text-sm font-medium text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs"
-                          />
-                        </div>
-                      </div>
-                    )}
+                    {/* Categorías Principales Ordenadas Alfabéticamente */}
+                    {categories
+                      .filter(c => c.parentId === null)
+                      .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }))
+                      .map(cat => {
+                        const subCats = categories
+                          .filter(c => c.parentId === cat.id)
+                          .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
+                        const hasChildren = subCats.length > 0;
+                        const isExpanded = !!sharedCategoryExpanded[cat.id];
+                        const isSelected = sharedTargetLink.categoryId === cat.id;
+
+                        return (
+                          <div key={cat.id} className="space-y-1">
+                            {/* Pestaña de una sola línea de la Categoría */}
+                            <div 
+                              onClick={() => {
+                                setSharedTargetLink(prev => prev ? ({
+                                  ...prev,
+                                  categoryId: prev.categoryId === cat.id ? null : cat.id
+                                }) : null);
+                              }}
+                              className={`w-full px-2.5 py-1.5 rounded-lg border flex items-center justify-between text-xs cursor-pointer transition-all ${
+                                isSelected
+                                  ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-400 dark:border-blue-600 text-blue-900 dark:text-blue-100 font-bold'
+                                  : 'bg-gray-50 dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white font-medium'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                {/* Checkbox */}
+                                <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
+                                  isSelected
+                                    ? 'bg-blue-600 border-blue-600 text-white'
+                                    : 'border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-900'
+                                }`}>
+                                  {isSelected && <Check size={11} strokeWidth={3} />}
+                                </div>
+
+                                {/* Icono y Color de la categoría */}
+                                <div 
+                                  style={{ backgroundColor: `${cat.color}25`, color: cat.color }}
+                                  className="w-4 h-4 rounded flex items-center justify-center shrink-0 font-bold"
+                                >
+                                  <DynamicIcon name={cat.iconName} size={11} />
+                                </div>
+                                <span className="truncate">{cat.name}</span>
+                              </div>
+
+                              {/* Flechita hacia abajo para desplegar subcategorías */}
+                              {hasChildren && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSharedCategoryExpanded(prev => ({ ...prev, [cat.id]: !prev[cat.id] }));
+                                  }}
+                                  className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded transition-colors"
+                                  title={isExpanded ? "Ocultar subcategorías" : "Ver subcategorías"}
+                                >
+                                  <ChevronDown size={15} className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                                </button>
+                              )}
+                            </div>
+
+                            {/* Subcategorías con subnivel y sus propios checkbox */}
+                            {hasChildren && isExpanded && (
+                              <div className="ml-5 pl-2 border-l-2 border-gray-200 dark:border-gray-700 space-y-1 my-1">
+                                {subCats.map(sub => {
+                                  const isSubSelected = sharedTargetLink.categoryId === sub.id;
+                                  return (
+                                    <div 
+                                      key={sub.id}
+                                      onClick={() => {
+                                        setSharedTargetLink(prev => prev ? ({
+                                          ...prev,
+                                          categoryId: prev.categoryId === sub.id ? null : sub.id
+                                        }) : null);
+                                      }}
+                                      className={`w-full px-2 py-1 rounded-md border flex items-center justify-between text-xs cursor-pointer transition-all ${
+                                        isSubSelected
+                                          ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-400 dark:border-blue-600 text-blue-900 dark:text-blue-100 font-bold'
+                                          : 'bg-white dark:bg-gray-800/60 hover:bg-gray-100 dark:hover:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 font-medium'
+                                      }`}
+                                    >
+                                      <div className="flex items-center gap-2 min-w-0">
+                                        {/* Checkbox Subcategoría */}
+                                        <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 transition-colors ${
+                                          isSubSelected
+                                            ? 'bg-blue-600 border-blue-600 text-white'
+                                            : 'border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-900'
+                                        }`}>
+                                          {isSubSelected && <Check size={10} strokeWidth={3} />}
+                                        </div>
+
+                                        {/* Color y Nombre Subcategoría */}
+                                        <div 
+                                          style={{ backgroundColor: `${sub.color}25`, color: sub.color }}
+                                          className="w-3.5 h-3.5 rounded flex items-center justify-center shrink-0 font-bold"
+                                        >
+                                          <DynamicIcon name={sub.iconName} size={10} />
+                                        </div>
+                                        <span className="truncate">{sub.name}</span>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                  </div>
+
+                  {/* 6. Al final del cajón de categorías: botón de favoritos con el iconito y sugiriendo el de etiquetas */}
+                  <div className="flex items-center gap-2 pt-1">
+                    {/* Botón Favorito con iconito */}
+                    <button
+                      type="button"
+                      onClick={() => setSharedTargetLink(prev => prev ? ({ ...prev, isFavorite: !prev.isFavorite }) : null)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border shrink-0 ${
+                        sharedTargetLink.isFavorite
+                          ? 'bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-700 shadow-2xs'
+                          : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750'
+                      }`}
+                    >
+                      <Star size={13} className={sharedTargetLink.isFavorite ? 'fill-amber-400 text-amber-500' : 'text-gray-400'} />
+                      <span>{sharedTargetLink.isFavorite ? 'Favorito' : 'Favorito'}</span>
+                    </button>
+
+                    {/* Campo sugiriendo etiquetas */}
+                    <div className="flex-1 relative">
+                      <Hash size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input 
+                        type="text" 
+                        value={sharedTargetLink.tags}
+                        onChange={(e) => setSharedTargetLink(prev => prev ? ({ ...prev, tags: e.target.value }) : null)}
+                        placeholder="Etiquetas (opcional)..."
+                        className="w-full pl-7 pr-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs"
+                      />
+                    </div>
+                  </div>
+
+                  {/* 7. Más abajo los botones de cancelar y guardar enlace */}
+                  <div className="pt-2 border-t border-gray-100 dark:border-gray-800 flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={handleDismissSharedScreen}
+                      className="py-2 px-3.5 rounded-xl font-bold text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isSavingSharedLink || !sharedTargetLink.url.trim()}
+                      onClick={handleSaveSharedLink}
+                      className="py-2 px-5 rounded-xl font-bold text-xs bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.99] disabled:opacity-50"
+                    >
+                      {isSavingSharedLink ? (
+                        <>
+                          <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <span>Guardando...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Check size={15} strokeWidth={2.5} />
+                          <span>Guardar enlace</span>
+                        </>
+                      )}
+                    </button>
                   </div>
                 </>
               )}
             </div>
-
-            {/* Footer con acciones */}
-            {!sharedLinkSavedSuccess && (
-              <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50/80 dark:bg-gray-800/80 flex items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={handleDismissSharedScreen}
-                  className="py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-200/80 dark:hover:bg-gray-700 transition-colors cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  disabled={isSavingSharedLink || !sharedTargetLink.url.trim()}
-                  onClick={handleSaveSharedLink}
-                  className="py-2.5 sm:py-3 px-6 rounded-xl font-extrabold text-xs sm:text-sm bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99] disabled:opacity-50"
-                >
-                  {isSavingSharedLink ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Guardando...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Check size={17} strokeWidth={3} />
-                      <span>Guardar Enlace</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            )}
           </div>
         </div>
       )}

@@ -6,6 +6,21 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.2.3] - 2026-11-07
+
+### Mejorado
+- **Reconstrucción exacta y minimalista de la ventana de guardado compartida**:
+  - Título limpio "Guardar enlace" en una sola línea, eliminando el badge "compartido" y el subtítulo informativo.
+  - Miniatura / logo central de la red social o sitio web de donde se comparte el enlace.
+  - Campo de título con cajón vacío listo para escribir.
+  - Sección "Categoría" con botón "+ Nueva" en la misma línea.
+  - Categorías ordenadas alfabéticamente en forma de pestañas de una sola línea con su nombre, color y checkbox interactivo de selección.
+  - Subcategorías desplegables con flecha hacia abajo (`ChevronDown`), organizadas en subnivel con sus propios checkboxes.
+  - Botón de Favoritos con estrella y campo sugiriendo etiquetas al final del cajón de categorías.
+  - Botones "Cancelar" y "Guardar enlace" ubicados en la parte inferior.
+
+---
+
 ## [1.2.2] - 2026-11-06
 
 ### Mejorado
