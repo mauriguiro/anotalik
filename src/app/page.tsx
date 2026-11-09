@@ -945,7 +945,8 @@ export default function LinkNestApp() {
         domain = finalUrl.split('/')[0];
       }
 
-      const finalTitle = sharedTargetLink.title.trim() || (domain.charAt(0).toUpperCase() + domain.slice(1));
+      const finalTitle = sharedTargetLink.title.trim() || sharedTargetLink.description?.trim() || (domain.charAt(0).toUpperCase() + domain.slice(1));
+      const finalDesc = sharedTargetLink.title.trim() ? (sharedTargetLink.description || '') : (sharedTargetLink.description?.trim() === finalTitle ? '' : (sharedTargetLink.description || ''));
       const tagsArray = (sharedTargetLink.tags || '')
         .split(',')
         .map(t => t.trim())
@@ -955,7 +956,7 @@ export default function LinkNestApp() {
         userId: user.uid,
         url: finalUrl,
         title: finalTitle,
-        description: sharedTargetLink.description || '',
+        description: finalDesc,
         image: '/api/thumbnail?url=' + encodeURIComponent(finalUrl) + '&v=2',
         categoryId: sharedTargetLink.categoryId,
         tags: tagsArray,
@@ -1193,10 +1194,107 @@ export default function LinkNestApp() {
     setExpandedCategories({});
   };
 
+  const getLinkCardDisplay = (link: any) => {
+    const lUrl = (link.url || '').toLowerCase();
+    
+    // 1. Detección de red social / plataforma y estilos que resaltan dentro de la paleta
+    let networkName = '';
+    let networkIcon = <Globe size={10} className="shrink-0 opacity-80" />;
+    let networkBadgeStyle = 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border-blue-200/80 dark:border-blue-800/60';
+
+    if (lUrl.includes('tiktok.') || lUrl.includes('douyin.')) {
+      networkName = 'TikTok';
+      networkIcon = <LucideIcons.Music size={10} className="shrink-0" />;
+      networkBadgeStyle = 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border-zinc-300 dark:border-zinc-700';
+    } else if (lUrl.includes('youtube.') || lUrl.includes('youtu.be')) {
+      networkName = 'YouTube';
+      networkIcon = <LucideIcons.Video size={10} className="shrink-0 text-red-500" />;
+      networkBadgeStyle = 'bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border-red-200/80 dark:border-red-800/60';
+    } else if (lUrl.includes('instagram.')) {
+      networkName = 'Instagram';
+      networkIcon = <LucideIcons.Camera size={10} className="shrink-0 text-pink-500" />;
+      networkBadgeStyle = 'bg-pink-50 dark:bg-pink-950/40 text-pink-600 dark:text-pink-400 border-pink-200/80 dark:border-pink-800/60';
+    } else if (lUrl.includes('facebook.') || lUrl.includes('fb.') || lUrl.includes('fb.watch')) {
+      networkName = 'Facebook';
+      networkIcon = <LucideIcons.Users size={10} className="shrink-0 text-blue-600" />;
+      networkBadgeStyle = 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border-blue-200/80 dark:border-blue-800/60';
+    } else if (lUrl.includes('twitter.') || lUrl.includes('x.com')) {
+      networkName = 'X (Twitter)';
+      networkIcon = <LucideIcons.MessageCircle size={10} className="shrink-0 text-gray-700 dark:text-gray-300" />;
+      networkBadgeStyle = 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700';
+    } else if (lUrl.includes('linkedin.')) {
+      networkName = 'LinkedIn';
+      networkIcon = <LucideIcons.Briefcase size={10} className="shrink-0 text-sky-600" />;
+      networkBadgeStyle = 'bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 border-sky-200/80 dark:border-sky-800/60';
+    } else if (lUrl.includes('github.')) {
+      networkName = 'GitHub';
+      networkIcon = <LucideIcons.Code size={10} className="shrink-0 text-gray-800 dark:text-gray-200" />;
+      networkBadgeStyle = 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border-gray-300 dark:border-gray-700';
+    } else if (lUrl.includes('twitch.')) {
+      networkName = 'Twitch';
+      networkIcon = <LucideIcons.Tv size={10} className="shrink-0 text-purple-500" />;
+      networkBadgeStyle = 'bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border-purple-200/80 dark:border-purple-800/60';
+    } else if (lUrl.includes('pinterest.')) {
+      networkName = 'Pinterest';
+      networkIcon = <LucideIcons.Pin size={10} className="shrink-0 text-rose-500" />;
+      networkBadgeStyle = 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border-rose-200/80 dark:border-rose-800/60';
+    } else {
+      try {
+        const u = link.url.startsWith('http') ? link.url : `https://${link.url}`;
+        const host = new URL(u).hostname.replace('www.', '');
+        networkName = host.charAt(0).toUpperCase() + host.slice(1);
+      } catch {
+        networkName = 'Web';
+      }
+    }
+
+    // 2. Intercambio y resolución de título y red:
+    // Si link.title contenía el nombre de la red o dominio (o si el usuario guardó el título en description),
+    // tomamos el título real para ubicarlo donde figuraba la red social con su tamaño y color.
+    const rawTitle = (link.title || '').trim();
+    const rawDesc = (link.description || '').trim();
+    const rawTitleLower = rawTitle.toLowerCase();
+    const netLower = networkName.toLowerCase();
+
+    const isTitleJustNetwork = 
+      rawTitleLower === netLower ||
+      rawTitleLower === `${netLower}.com` ||
+      rawTitleLower.includes('tiktok') ||
+      rawTitleLower.includes('facebook') ||
+      rawTitleLower.includes('instagram') ||
+      rawTitleLower.includes('youtube') ||
+      rawTitleLower === 'enlace web' ||
+      rawTitleLower === 'enlace compartido';
+
+    let displayTitle = rawTitle;
+    let extraNote = rawDesc;
+
+    if (isTitleJustNetwork && rawDesc) {
+      displayTitle = rawDesc;
+      extraNote = '';
+    } else if (!rawTitle && rawDesc) {
+      displayTitle = rawDesc;
+      extraNote = '';
+    } else if (!rawTitle && !rawDesc) {
+      displayTitle = networkName;
+    } else if (rawTitle && rawDesc && rawTitle.toLowerCase() === rawDesc.toLowerCase()) {
+      extraNote = '';
+    }
+
+    return {
+      displayTitle,
+      networkName,
+      networkIcon,
+      networkBadgeStyle,
+      extraNote
+    };
+  };
+
   const renderLinkCard = (link: any) => {
     const category = categories.find(c => c.id === link.categoryId);
     const isCopied = copiedLinkId === link.id;
     const isDropdownOpen = activeLinkDropdown === link.id;
+    const { displayTitle, networkName, networkIcon, networkBadgeStyle, extraNote } = getLinkCardDisplay(link);
 
     return (
       <div 
@@ -1234,7 +1332,7 @@ export default function LinkNestApp() {
 
             <img 
               src={link.image?.includes('favicons?domain=') ? `/api/thumbnail?url=${encodeURIComponent(link.url)}&v=2` : (link.image?.includes('/api/thumbnail') ? link.image + '&v=2' : link.image)} 
-              alt={link.title} 
+              alt={displayTitle} 
               className="w-full h-full object-cover absolute inset-0 z-10"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
@@ -1256,6 +1354,7 @@ export default function LinkNestApp() {
           
           {/* Información Principal del Enlace */}
           <div className="flex-1 min-w-0">
+            {/* 1. Categoría */}
             <div className="flex items-center gap-1.5 mb-0.5">
               {category && (
                 <span 
@@ -1268,10 +1367,12 @@ export default function LinkNestApp() {
               )}
             </div>
 
-            <h3 className="font-bold text-gray-900 dark:text-gray-100 text-xs sm:text-sm leading-snug line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" title={link.title}>
-              {link.title}
+            {/* 2. Título (en la posición donde antes figuraba la red social, con su estilo y tamaño) */}
+            <h3 className="font-bold text-gray-900 dark:text-gray-100 text-xs sm:text-sm leading-snug line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" title={displayTitle}>
+              {displayTitle}
             </h3>
 
+            {/* 3. Enlace */}
             <a 
               href={link.url} 
               target="_blank" 
@@ -1283,13 +1384,20 @@ export default function LinkNestApp() {
               <ExternalLink size={10} className="shrink-0 opacity-70" />
             </a>
 
-            {link.description ? (
-              <p className="text-[11px] text-gray-500 dark:text-gray-400 line-clamp-1 mt-0.5 leading-tight">
-                {link.description}
-              </p>
-            ) : null}
+            {/* 4. Red social de donde viene cada enlace (en la posición donde antes figuraba el título en gris, resaltada con la paleta de la app) */}
+            <div className="flex items-center flex-wrap gap-1.5 mt-1">
+              <span className={`inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded border shadow-2xs ${networkBadgeStyle}`}>
+                {networkIcon}
+                <span>{networkName}</span>
+              </span>
+              {extraNote ? (
+                <span className="text-[11px] text-gray-500 dark:text-gray-400 line-clamp-1 leading-tight">
+                  {extraNote}
+                </span>
+              ) : null}
+            </div>
 
-            {/* Etiquetas / Tags */}
+            {/* 5. Etiquetas / Tags */}
             {link.tags && link.tags.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-1">
                 {link.tags.map((tag: string, i: number) => (

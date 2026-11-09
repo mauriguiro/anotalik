@@ -6,6 +6,16 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.2.5] - 2026-11-09
+
+### Mejorado
+- **Intercambio y jerarquía visual en tarjetas de enlaces**:
+  - **Título principal prioritario**: El título de cada enlace se reubica en la parte superior de la tarjeta con estilo tipográfico destacado (`text-xs sm:text-sm font-bold`).
+  - **Red social de procedencia identificada**: La red social o plataforma de origen (TikTok, YouTube, Instagram, Facebook, X/Twitter, LinkedIn, etc.) se muestra como badge visual distintivo con su icono correspondiente debajo del enlace, manteniendo coherencia con la línea de diseño de la app.
+  - **Detección y preservación inteligente**: Si el enlace compartido guardaba la descripción como contenido principal o el título era el nombre de dominio, se detecta y presenta automáticamente como título destacado.
+
+---
+
 ## [1.2.4] - 2026-11-07
 
 ### Mejorado
